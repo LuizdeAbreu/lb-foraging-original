@@ -1,11 +1,19 @@
+# Original imports
 import argparse
 import logging
-import random
 import time
 import gym
 import numpy as np
-import lbforaging
 from gym.envs.registration import register
+
+# Original imports that were not used
+# (keeping them here for safety)
+import random
+import lbforaging
+
+# New imports
+import metrics
+
 
 
 logger = logging.getLogger(__name__)
@@ -15,6 +23,7 @@ def _game_loop(env, render):
     """
     """
     obs = env.reset()
+    steps = 0
     done = False
 
     if render:
@@ -22,7 +31,7 @@ def _game_loop(env, render):
         time.sleep(0.5)
 
     while not done:
-
+        steps += 1
         actions = env.action_space.sample()
 
         nobs, nreward, ndone, _ = env.step(actions)
