@@ -7,6 +7,8 @@ import gym
 from gym.utils import seeding
 import numpy as np
 
+# from lbforaging.agents.q_agent import QAgent
+from lbforaging.agents.random_agent import RandomAgent
 
 class Action(Enum):
     NONE = 0
@@ -89,6 +91,12 @@ class ForagingEnv(Env):
         self.logger = logging.getLogger(__name__)
         self.seed()
         self.players = [Player() for _ in range(players)]
+
+        self.agents = [RandomAgent for _ in range(players)]
+        # self.agents[0] = QAgent
+        for i in range(players):
+            self.players[i].set_controller(self.agents[i](i))
+            print(self.players[i].name)
 
         self.field = np.zeros(field_size, np.int32)
 
