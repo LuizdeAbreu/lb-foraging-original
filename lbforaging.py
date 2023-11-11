@@ -77,6 +77,8 @@ def main(game_count=1, render=False):
         }
     
     print("episode_results", episode_results)
+    # compare results
+    metrics.compare_results(episode_results, title="Foraging-10x10-3p-4f-v2")
 
 
 if __name__ == "__main__":
