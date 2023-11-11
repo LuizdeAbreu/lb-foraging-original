@@ -14,8 +14,6 @@ import lbforaging
 # New imports
 import metrics
 
-
-
 logger = logging.getLogger(__name__)
 
 
@@ -35,15 +33,14 @@ def _game_loop(env, render):
         actions = env.action_space.sample()
 
         nobs, nreward, ndone, _ = env.step(actions)
-        if sum(nreward) > 0:
-            print(nreward)
 
         if render:
             env.render()
             time.sleep(0.5)
 
         done = np.all(ndone)
-    # print(env.players[0].score, env.players[1].score)
+
+    return steps, env
 
 
 def main(game_count=1, render=False):
@@ -67,8 +64,19 @@ def main(game_count=1, render=False):
     env = gym.make("Foraging-10x10-3p-4f-v2")
     obs = env.reset()
 
+    episode_results = {}
     for episode in range(game_count):
-        _game_loop(env, render)
+        steps, env = _game_loop(env, render)
+        # create dict with results
+        player_scores = [player.score for player in env.players]
+        # score should be 1 if all food is collected
+        episode_results[episode] = {
+            "steps": steps,
+            "player_scores": player_scores,
+            "score": sum(player_scores),
+        }
+    
+    print("episode_results", episode_results)
 
 
 if __name__ == "__main__":
