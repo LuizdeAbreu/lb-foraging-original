@@ -338,7 +338,7 @@ class ForagingEnv(Env):
     def get_valid_actions(self) -> list:
         return list(product(*[self._valid_actions[player] for player in self.players]))
 
-    def _make_obs(self, player):
+    def make_obs(self, player):
         return self.Observation(
             actions=self._valid_actions[player],
             players=[
@@ -447,7 +447,7 @@ class ForagingEnv(Env):
                 if p.is_self:
                     return p.reward
 
-        observations = [self._make_obs(player) for player in self.players]
+        observations = [self.make_obs(player) for player in self.players]
         if self._grid_observation:
             layers = make_global_grid_arrays()
             agents_bounds = [get_agent_grid_bounds(*player.position) for player in self.players]

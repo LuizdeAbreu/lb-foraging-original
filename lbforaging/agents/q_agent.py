@@ -114,7 +114,7 @@ class QAgent(Agent):
 
         env = Env.from_obs(obs)
 
-        observations = [env._make_obs(p) for p in env.players]
+        observations = [env.make_obs(p) for p in env.players]
 
         for i, player in enumerate(env.players):
             if i == player_no:

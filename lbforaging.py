@@ -24,7 +24,7 @@ warnings.filterwarnings("ignore", category=UserWarning, module="gym")
 def _game_loop(env, render):
     """
     """
-    obs = env.reset()
+    _ = env.reset()
     steps = 0
     done = False
 
@@ -34,9 +34,14 @@ def _game_loop(env, render):
 
     while not done:
         steps += 1
-        actions = env.action_space.sample()
+        # actions = env.action_space.sample()
+        actions = []
+        for i in range(len(env.players)):
+            player = env.players[i]
+            action = player.step(env.make_obs(player))
+            actions.append(action)
 
-        nobs, nreward, ndone, _ = env.step(actions)
+        _, _, ndone, _ = env.step(actions)
 
         if render:
             env.render()
@@ -66,7 +71,11 @@ def main(game_count=1, render=False):
         },
     )
     env = gym.make("Foraging-10x10-3p-4f-v2")
-    obs = env.reset()
+
+    
+    agents = [RandomAgent for _ in range(len(env.players))]
+    for i in range(len(env.players)):
+        env.players[i].set_controller(agents[i](env.players[i]))
 
     episode_results = {}
     for episode in range(game_count):
