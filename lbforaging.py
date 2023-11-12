@@ -18,6 +18,8 @@ import metrics
 
 logger = logging.getLogger(__name__)
 
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning, module="gym") 
 
 def _game_loop(env, render):
     """
