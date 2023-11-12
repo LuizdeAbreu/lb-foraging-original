@@ -24,7 +24,7 @@ warnings.filterwarnings("ignore", category=UserWarning, module="gym")
 def _game_loop(env, render):
     """
     """
-    _ = env.reset()
+    nobs = env.reset()
     steps = 0
     done = False
 
@@ -38,10 +38,9 @@ def _game_loop(env, render):
         actions = []
         for i in range(len(env.players)):
             player = env.players[i]
-            action = player.step(env.make_obs(player))
-            actions.append(action)
+            actions.append(player.step(nobs[i]))
 
-        _, _, ndone, _ = env.step(actions)
+        nobs, nreward, ndone, _ = env.step(actions)
 
         if render:
             env.render()
