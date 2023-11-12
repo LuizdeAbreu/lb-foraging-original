@@ -52,12 +52,10 @@ def main(game_count=1, render=False):
     p=3
     f=4
     c=0
-    a=[QAgent for _ in range(p)]
     register(
         id="Foraging-{0}x{0}-{1}p-{2}f{3}-v2".format(s, p, f, "-coop" if c else ""),
         entry_point="lbforaging.foraging:ForagingEnv",
         kwargs={
-            "agents": a,
             "players": p,
             "max_player_level": 5,
             "field_size": (s, s),

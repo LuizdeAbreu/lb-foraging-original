@@ -74,7 +74,6 @@ class ForagingEnv(Env):
 
     def __init__(
         self,
-        agents,
         players,
         max_player_level,
         field_size,
@@ -89,11 +88,6 @@ class ForagingEnv(Env):
         self.logger = logging.getLogger(__name__)
         self.seed()
         self.players = [Player() for _ in range(players)]
-        self.agents = agents
-
-        for i in range(players):
-            self.players[i].set_controller(self.agents[i](i))
-            print(self.players[i].name)
 
         self.field = np.zeros(field_size, np.int32)
 

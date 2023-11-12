@@ -3,3 +3,4 @@
 # from lbforaging.agents.q_agent import QAgent
 # from lbforaging.agents.monte_carlo import MonteCarloAgent
 # from lbforaging.agents.hba import HBAAgent
+# from lbforaging.agents.dqn_agent import DQNAgent
