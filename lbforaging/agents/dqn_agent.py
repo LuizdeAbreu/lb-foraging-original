@@ -11,6 +11,8 @@ from lbforaging.agents.dqn import DQN
 from lbforaging.foraging.environment import Action, ForagingEnv as Env
 from lbforaging.agents.helpers import ReplayMemory, Transition
 
+# https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html
+
 BATCH_SIZE = 128
 GAMMA = 0.99
 EPS_START = 0.9
