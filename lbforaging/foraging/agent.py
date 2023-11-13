@@ -18,18 +18,21 @@ class Agent:
     def __getattr__(self, item):
         return getattr(self.player, item)
 
-    def _step(self, obs):
+    def _step(self, obs, reward=None, done=False):
         self.observed_position = next(
             (x for x in obs.players if x.is_self), None
         ).position
 
         # saves the action to the history
-        action = self.step(obs)
+        action = self.step(obs, reward)
         self.history.append(action)
 
         return action
 
-    def step(self, obs):
+    def step(self, obs, reward=None, done=False):
+        raise NotImplemented("You must implement an agent")
+
+    def choose_action(self, obs):
         raise NotImplemented("You must implement an agent")
 
     def _closest_food(self, obs, max_food_level=None, start=None):

@@ -7,5 +7,8 @@ from lbforaging.foraging.environment import ForagingEnv
 class RandomAgent(Agent):
     name = "Random Agent"
 
-    def _step(self, obs):
+    def _step(self, obs, reward, done):
+        return random.choice(ForagingEnv.action_set)
+
+    def choose_action(self, obs):
         return random.choice(ForagingEnv.action_set)

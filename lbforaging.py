@@ -38,9 +38,11 @@ def _game_loop(env, render):
         actions = []
         for i in range(len(env.players)):
             player = env.players[i]
-            actions.append(player.step(nobs[i]))
+            actions.append(player.choose_action(nobs[i]))
 
         nobs, nreward, ndone, _ = env.step(actions)
+
+        player.step(nobs[i], nreward[i], ndone[i])
 
         if render:
             env.render()

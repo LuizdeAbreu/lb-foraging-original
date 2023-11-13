@@ -45,8 +45,11 @@ class Player:
     def set_controller(self, controller):
         self.controller = controller
 
-    def step(self, obs):
-        return self.controller._step(obs)
+    def step(self, obs, reward=None, done=False):
+        return self.controller._step(obs, reward, done)
+
+    def choose_action(self, obs):
+        return self.controller.choose_action(obs)
 
     @property
     def name(self):
