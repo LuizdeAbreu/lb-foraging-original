@@ -73,7 +73,7 @@ def main(game_count=1, render=False):
     s=6
     p=3
     f=4
-    c=1
+    c=0
     env_id = "Foraging-{0}x{0}-{1}p-{2}f{3}-v2".format(s, p, f, "-coop" if c else "")
     register(
         id=env_id,
