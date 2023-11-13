@@ -50,6 +50,7 @@ class DQNAgent(Agent):
         eps_threshold = EPS_END + (EPS_START - EPS_END) * \
             math.exp(-1. * self.steps_done / EPS_DECAY)
         self.steps_done += 1
+        result = None
         if sample > eps_threshold and self.policy_net is not None:
             with torch.no_grad():
                 # t.max(1) will return the largest column value of each row.
@@ -58,9 +59,12 @@ class DQNAgent(Agent):
                 obs = torch.tensor(obs, dtype=torch.float32, device=device).unsqueeze(0)
                 result = self.policy_net(obs).max(1)[1].view(1, 1)
                 action = Action(result.item())
-                return action
+                self.previous_action = action
+                result = action
         else:
-            return random.choice(Env.action_set)
+            result = random.choice(Env.action_set)
+        self.previous_action = result
+        return result
 
     def _step(self, obs, reward, done):
         if (self.previous_state is None):
@@ -77,6 +81,12 @@ class DQNAgent(Agent):
             next_state = obs
 
         self.previous_action = int(self.previous_action)
+        # print("#####")
+        # print("State:", self.previous_state)
+        # print("Action:", self.previous_action)
+        # print("Next State:", next_state)
+        # print("Reward:", reward)
+        # print("\n")
 
         self.memory.push(self.previous_state, torch.tensor([[self.previous_action]], device=device, dtype=torch.long), next_state, reward)
 
