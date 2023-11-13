@@ -8,7 +8,7 @@ import torch.nn.functional as F
 
 from lbforaging.foraging.agent import Agent
 from lbforaging.agents.dqn import DQN
-from lbforaging.foraging.environment import ForagingEnv as env
+from lbforaging.foraging.environment import Action, ForagingEnv as Env
 from lbforaging.agents.helpers import ReplayMemory, Transition
 
 BATCH_SIZE = 128
@@ -21,7 +21,7 @@ LR = 1e-4
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class DQNAgent(Agent):
-    name = "Q Agent"
+    name = "DQN Agent"
 
     def __init__(self, *kargs, **kwargs):
         super().__init__(*kargs, **kwargs)
@@ -32,33 +32,40 @@ class DQNAgent(Agent):
         self.optimizer = None
         self.previous_state = None
         self.previous_action = None
+        self.steps_done = 0
+
+    def init_from_env(self, env):
+        n_observations = env.observation_space[0].shape[0]
+        n_actions = env.action_space[0].n
+        self.policy_net = DQN(n_observations, n_actions).to(device)
+        self.target_net = DQN(n_observations, n_actions).to(device)
+        self.target_net.load_state_dict(self.policy_net.state_dict())
+        self.optimizer = optim.AdamW(self.policy_net.parameters(), lr=LR, amsgrad=True)
+        self.memory = ReplayMemory(10000)
 
     def choose_action(self, obs):
         sample = random.random()
         eps_threshold = EPS_END + (EPS_START - EPS_END) * \
-            math.exp(-1. * steps_done / EPS_DECAY)
-        steps_done += 1
-        if sample > eps_threshold:
+            math.exp(-1. * self.steps_done / EPS_DECAY)
+        self.steps_done += 1
+        if sample > eps_threshold and self.policy_net is not None:
             with torch.no_grad():
                 # t.max(1) will return the largest column value of each row.
                 # second column on max result is index of where max element was
                 # found, so we pick action with the larger expected reward.
-                return self.policy_net(obs).max(1)[1].view(1, 1)
+                obs = torch.tensor(obs, dtype=torch.float32, device=device).unsqueeze(0)
+                result = self.policy_net(obs).max(1)[1].view(1, 1)
+                action = Action(result.item())
+                return action
         else:
-            return torch.tensor([[random.choice(env.action_set)]], device=device, dtype=torch.long)
+            return random.choice(Env.action_set)
 
-    def step(self, obs, reward, done):
-        if (self.policy_net == None):
-            n_observations = env.observation_space[0].shape[0]
-            n_actions = env.action_space[0].n
-            self.policy_net = DQN(n_observations, n_actions).to(device)
-            self.target_net = DQN(n_observations, n_actions).to(device)
-            self.target_net.load_state_dict(self.policy_net.state_dict())
-            self.optimizer = optim.AdamW(self.policy_net.parameters(), lr=LR, amsgrad=True)
-            self.memory = ReplayMemory(10000)
-            self.previous_state = torch.tensor(obs, dtype=torch.float32, device=device).unsqueeze(0)
-            self.previous_action = 0
-
+    def _step(self, obs, reward, done):
+        if (self.previous_state is None):
+            self.previous_state = obs
+            self.previous_action = self.choose_action(obs)
+            return
+            
         obs = torch.tensor(obs, dtype=torch.float32, device=device).unsqueeze(0)
         reward = torch.tensor([reward], dtype=torch.float32, device=device)
 
@@ -66,6 +73,8 @@ class DQNAgent(Agent):
             next_state = None
         else:
             next_state = obs
+
+        self.previous_action = int(self.previous_action)
 
         self.memory.push(self.previous_state, torch.tensor([[self.previous_action]], device=device, dtype=torch.long), next_state, reward)
 

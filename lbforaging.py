@@ -7,6 +7,17 @@ import numpy as np
 from gym.envs.registration import register
 from lbforaging.agents.random_agent import RandomAgent
 from lbforaging.agents.q_agent import QAgent
+from lbforaging.agents.dqn_agent import DQNAgent
+from enum import Enum
+from tqdm import trange
+
+class Action(Enum):
+    NONE = 0
+    NORTH = 1
+    SOUTH = 2
+    WEST = 3
+    EAST = 4
+    LOAD = 5
 
 # Original imports that were not used
 # (keeping them here for safety)
@@ -31,6 +42,11 @@ def _game_loop(env, render):
     if render:
         env.render()
         time.sleep(0.5)
+
+    for i in range(len(env.players)):
+        player = env.players[i]
+        if player.name == "DQN Agent":
+            player.init_from_env(env)
 
     while not done:
         steps += 1
@@ -74,12 +90,12 @@ def main(game_count=1, render=False):
     env = gym.make("Foraging-10x10-3p-4f-v2")
 
     
-    agents = [RandomAgent for _ in range(len(env.players))]
+    agents = [DQNAgent for _ in range(len(env.players))]
     for i in range(len(env.players)):
         env.players[i].set_controller(agents[i](env.players[i]))
 
     episode_results = {}
-    for episode in range(game_count):
+    for episode in trange(game_count):
         steps, env = _game_loop(env, render)
         # create dict with results
         player_scores = [player.score for player in env.players]
@@ -90,7 +106,7 @@ def main(game_count=1, render=False):
             "score": sum(player_scores),
         }
     
-    print("episode_results", episode_results)
+    # print("episode_results", episode_results)
     # compare results
     metrics.compare_results(episode_results, title="Foraging-10x10-3p-4f-v2")
 

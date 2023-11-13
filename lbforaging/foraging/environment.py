@@ -15,6 +15,9 @@ class Action(Enum):
     EAST = 4
     LOAD = 5
 
+    def __int__(self):
+        return self.value
+
 
 class CellEntity(Enum):
     # entity encodings for grid observations
@@ -50,6 +53,9 @@ class Player:
 
     def choose_action(self, obs):
         return self.controller.choose_action(obs)
+
+    def init_from_env(self, env):
+        return self.controller.init_from_env(env)
 
     @property
     def name(self):
