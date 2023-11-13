@@ -49,6 +49,6 @@ def compare_results(results, confidence=0.95, title="Results"):
     lastx_final_rewards = last_x_average(scores, x)
     ax.plot(ema_final_rewards, label="Exponential moving average")
     ax.plot(lastx_final_rewards, label=f'Average of last {x} values')
-    plt.legend(loc="top left")
+    plt.legend(loc="upper left")
     
     plt.show()
