@@ -43,11 +43,6 @@ def _game_loop(env, render):
         env.render()
         time.sleep(0.5)
 
-    for i in range(len(env.players)):
-        player = env.players[i]
-        if player.name == "DQN Agent":
-            player.init_from_env(env)
-
     while not done:
         steps += 1
         # actions = env.action_space.sample()
@@ -93,7 +88,10 @@ def main(game_count=1, render=False):
     
     agents = [DQNAgent for _ in range(len(env.players))]
     for i in range(len(env.players)):
-        env.players[i].set_controller(agents[i](env.players[i]))
+        player = env.players[i]
+        player.set_controller(agents[i](env.players[i]))
+        if player.name == "DQN Agent":
+            player.init_from_env(env)
 
     episode_results = {}
     for episode in trange(game_count):
