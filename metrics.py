@@ -13,6 +13,22 @@ def z_table(confidence):
 def std_error(std, n, confidence):
     return z_table(confidence) * std / math.sqrt(n)
 
+def exponential_moving_average(data):
+    n = len(data)
+    weights = np.exp(np.linspace(-1., 0., n))
+    weights /= weights.sum()
+    ema = np.convolve(data, weights, mode='full')[:len(data)]
+    return ema
+
+def last_x_average(data, x):
+    n = len(data)
+    averages = np.zeros(n)
+    for i in range(n):
+        start_index = max(0, i - x - 1)  # Starting index for the last 10 values
+        last_x = data[start_index:i+1]  # Extract the last 10 values up to index i
+        averages[i] = np.mean(last_x)  # Calculate the mean and store it in the averages array
+    return averages
+
 def compare_results(results, confidence=0.95, title="Results"):
     figure = plt.figure()
     figure.suptitle(title)
@@ -28,4 +44,11 @@ def compare_results(results, confidence=0.95, title="Results"):
         linestyle="--",
         color="black",
     )
+    ema_final_rewards = exponential_moving_average(scores)
+    x = 10
+    lastx_final_rewards = last_x_average(scores, x)
+    ax.plot(ema_final_rewards, label="Exponential moving average")
+    ax.plot(lastx_final_rewards, label=f'Average of last {x} values')
+    plt.legend(loc="lower right")
+    
     plt.show()
