@@ -70,12 +70,13 @@ def _game_loop(env, render):
 
 
 def main(game_count=1, render=False):
-    s=10
+    s=6
     p=3
     f=4
-    c=0
+    c=1
+    env_id = "Foraging-{0}x{0}-{1}p-{2}f{3}-v2".format(s, p, f, "-coop" if c else "")
     register(
-        id="Foraging-{0}x{0}-{1}p-{2}f{3}-v2".format(s, p, f, "-coop" if c else ""),
+        id=env_id,
         entry_point="lbforaging.foraging:ForagingEnv",
         kwargs={
             "players": p,
@@ -87,7 +88,7 @@ def main(game_count=1, render=False):
             "force_coop": c,
         },
     )
-    env = gym.make("Foraging-10x10-3p-4f-v2")
+    env = gym.make(env_id)
 
     
     agents = [DQNAgent for _ in range(len(env.players))]
