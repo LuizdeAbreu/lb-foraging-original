@@ -100,9 +100,10 @@ def main(game_count=1, render=False):
     )
     env = gym.make(env_id)
 
-    # print("Env state shape", env.observation_space[0].shape[0]*len(env.players))
-    # mixer = QMixer(len(env.players), env.observation_space[0].shape[0]*len(env.players))
-    mixer = None
+    state_shape = env.observation_space[0].shape[0]*len(env.players)
+    # print("Env state shape", state_shape)
+    mixer = QMixer(len(env.players), state_shape)
+    # mixer = None
     
     agents = [DQNAgent for _ in range(len(env.players))]
     for i in range(len(env.players)):
