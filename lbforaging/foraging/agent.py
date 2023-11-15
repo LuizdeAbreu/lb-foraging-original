@@ -35,7 +35,7 @@ class Agent:
     def choose_action(self, obs):
         raise NotImplemented("You must implement an agent")
 
-    def init_from_env(self, env):
+    def init_from_env(self, env, mixer = None):
         raise NotImplemented("Agent does not have init from end implemented method or does not need it")
 
     def _closest_food(self, obs, max_food_level=None, start=None):

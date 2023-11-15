@@ -1,5 +1,6 @@
 import random
 import math
+import copy
 
 import torch
 import torch.nn as nn
@@ -10,8 +11,11 @@ from lbforaging.foraging.agent import Agent
 from lbforaging.agents.networks.dqn import DQN
 from lbforaging.foraging.environment import Action, ForagingEnv as Env
 from lbforaging.agents.helpers import ReplayMemory, Transition
+from lbforaging.agents.networks.qmixer import QMixer
 
 # https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html
+
+global device
 
 BATCH_SIZE = 128
 GAMMA = 0.99
@@ -36,13 +40,18 @@ class DQNAgent(Agent):
         self.previous_action = None
         self.steps_done = 0
 
-    def init_from_env(self, env):
+    def init_from_env(self, env, mixer = None):
         n_observations = env.observation_space[0].shape[0]
         n_actions = env.action_space[0].n
         self.policy_net = DQN(n_observations, n_actions).to(device)
         self.target_net = DQN(n_observations, n_actions).to(device)
         self.target_net.load_state_dict(self.policy_net.state_dict())
-        self.optimizer = optim.AdamW(self.policy_net.parameters(), lr=LR, amsgrad=True)
+        self.params = list(self.policy_net.parameters())
+        if mixer is not None:
+            self.mixer = mixer
+            self.params += list(self.mixer.parameters())
+            self.target_mixer = copy.deepcopy(self.mixer)
+        self.optimizer = optim.AdamW(self.params, lr=LR, amsgrad=True)
         self.memory = ReplayMemory(10000)
 
     def choose_action(self, obs):
@@ -133,6 +142,7 @@ class DQNAgent(Agent):
         next_state_values = torch.zeros(BATCH_SIZE, device=device)
         with torch.no_grad():
             next_state_values[non_final_mask] = self.target_net(non_final_next_states).max(1)[0]
+            
         # Compute the expected Q values
         expected_state_action_values = (next_state_values * GAMMA) + reward_batch
 
@@ -143,8 +153,9 @@ class DQNAgent(Agent):
         # Optimize the model
         self.optimizer.zero_grad()
         loss.backward()
+
         # In-place gradient clipping
-        torch.nn.utils.clip_grad_value_(self.policy_net.parameters(), 100)
+        torch.nn.utils.clip_grad_value_(self.params, 100)
         self.optimizer.step()
 
     

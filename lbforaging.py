@@ -11,6 +11,8 @@ from lbforaging.agents.dqn_agent import DQNAgent
 from enum import Enum
 from tqdm import trange
 
+from lbforaging.agents.networks.qmixer import QMixer
+
 class Action(Enum):
     NONE = 0
     NORTH = 1
@@ -85,13 +87,15 @@ def main(game_count=1, render=False):
     )
     env = gym.make(env_id)
 
+    # print("Env state shape", env.observation_space[0].shape[0]*len(env.players))
+    mixer = QMixer(len(env.players), env.observation_space[0].shape[0]*len(env.players))
     
     agents = [DQNAgent for _ in range(len(env.players))]
     for i in range(len(env.players)):
         player = env.players[i]
         player.set_controller(agents[i](env.players[i]))
         if player.name == "DQN Agent":
-            player.init_from_env(env)
+            player.init_from_env(env, mixer)
 
     episode_results = {}
     for episode in trange(game_count):

@@ -23,7 +23,6 @@ class QMixer(nn.Module):
             self.hyper_w_1 = nn.Linear(self.state_dim, self.embed_dim * self.n_agents)
             self.hyper_w_final = nn.Linear(self.state_dim, self.embed_dim)
         elif hypernet_layers == 2:
-            hypernet_embed = self.hypernet_embed
             self.hyper_w_1 = nn.Sequential(nn.Linear(self.state_dim, hypernet_embed),
                                            nn.ReLU(),
                                            nn.Linear(hypernet_embed, self.embed_dim * self.n_agents))

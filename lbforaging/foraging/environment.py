@@ -54,8 +54,8 @@ class Player:
     def choose_action(self, obs):
         return self.controller.choose_action(obs)
 
-    def init_from_env(self, env):
-        return self.controller.init_from_env(env)
+    def init_from_env(self, env, mixer = None):
+        return self.controller.init_from_env(env, mixer)
 
     @property
     def name(self):
