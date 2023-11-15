@@ -55,20 +55,17 @@ def _game_loop(env, render, mixer = None):
                 player = env.players[i]
                 actions.append(player.choose_action(nobs[i]))
         else:
-            # each player will return their Q values for that state
-            # and the mixer will choose the action for each player
-            q_values = []
-            for i in range(len(env.players)):
-                player = env.players[i]
-                player_q = player.get_qvalues(nobs[i])
-                # print("Player {0} Q values: {1}".format(i, player_q))
-                q_values.append(player_q)
-            actions = mixer(q_values, nobs)
-            print("Actions: {0}".format(actions))
+            actions = mixer.choose_action(nobs)
 
         nobs, nreward, ndone, _ = env.step(actions)
 
-        player.step(nobs[i], nreward[i], ndone[i])
+        if mixer is None: 
+            # each player will learn from the experience
+            for i in range(len(env.players)):
+                player = env.players[i]
+                player.step(nobs[i], nreward[i], ndone[i])
+        else:
+            mixer.step(nobs, nreward, ndone)
 
         if render:
             env.render()
@@ -100,8 +97,6 @@ def main(game_count=1, render=False):
     )
     env = gym.make(env_id)
 
-    state_shape = env.observation_space[0].shape[0]*len(env.players)
-    # print("Env state shape", state_shape)
     mixer = True
     # mixer = None
     

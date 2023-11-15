@@ -12,6 +12,7 @@ from lbforaging.agents.networks.dqn import DQN
 from lbforaging.foraging.environment import Action, ForagingEnv as Env
 from lbforaging.agents.helpers import ReplayMemory, Transition
 from lbforaging.agents.networks.qmixer import QMixer
+from lbforaging.agents.dqn_agent import DQNAgent
 
 BATCH_SIZE = 128
 GAMMA = 0.99
@@ -47,14 +48,13 @@ class QMIX_Controller(Agent):
         n_actions = env.action_space[0].n
         state_shape = n_observations*len(env.players)
 
-        self.policy_net = DQN(n_observations, n_actions).to(device)
-        self.target_net = DQN(n_observations, n_actions).to(device)
-        self.target_net.load_state_dict(self.policy_net.state_dict())
-        self.params = list(self.policy_net.parameters())
+        for player in self.players:
+
+
         self.mixer = QMixer(len(env.players), state_shape)
-        self.params += list(self.mixer.parameters())
-        self.target_mixer = copy.deepcopy(self.mixer)
+        self.params = list(self.mixer.parameters())
         self.optimizer = optim.AdamW(self.params, lr=LR, amsgrad=True)
         self.memory = ReplayMemory(10000)
 
-        print("players", self.players)
+    
+
