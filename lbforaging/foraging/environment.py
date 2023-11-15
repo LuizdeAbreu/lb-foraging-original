@@ -51,6 +51,9 @@ class Player:
     def step(self, obs, reward=None, done=False):
         return self.controller._step(obs, reward, done)
 
+    def get_qvalues(self, obs):
+        return self.controller.get_qvalues(obs)
+
     def choose_action(self, obs):
         return self.controller.choose_action(obs)
 

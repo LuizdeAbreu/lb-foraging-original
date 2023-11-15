@@ -36,7 +36,7 @@ class DQNAgent(Agent):
         self.target_net = None
         self.memory = None
         self.optimizer = None
-        self.previous_state = None
+        self.previous_obs = None
         self.previous_action = None
         self.steps_done = 0
 
@@ -54,6 +54,10 @@ class DQNAgent(Agent):
         self.optimizer = optim.AdamW(self.params, lr=LR, amsgrad=True)
         self.memory = ReplayMemory(10000)
 
+    def get_qvalues(self, obs):
+        obs = torch.tensor(obs, dtype=torch.float32, device=device).unsqueeze(0)
+        return self.policy_net(obs)
+
     def choose_action(self, obs):
         sample = random.random()
         eps_threshold = EPS_END + (EPS_START - EPS_END) * \
@@ -65,8 +69,8 @@ class DQNAgent(Agent):
                 # t.max(1) will return the largest column value of each row.
                 # second column on max result is index of where max element was
                 # found, so we pick action with the larger expected reward.
-                obs = torch.tensor(obs, dtype=torch.float32, device=device).unsqueeze(0)
-                result = self.policy_net(obs).max(1)[1].view(1, 1)
+                q_values = self.get_qvalues(obs)
+                result = q_values.max(1)[1].view(1, 1)
                 action = Action(result.item())
                 self.previous_action = action
                 result = action
@@ -76,8 +80,8 @@ class DQNAgent(Agent):
         return result
 
     def _step(self, obs, reward, done):
-        if (self.previous_state is None):
-            self.previous_state = torch.tensor(obs, dtype=torch.float32, device=device).unsqueeze(0)
+        if (self.previous_obs is None):
+            self.previous_obs = torch.tensor(obs, dtype=torch.float32, device=device).unsqueeze(0)
             self.previous_action = self.choose_action(obs)
             return
             
@@ -85,21 +89,21 @@ class DQNAgent(Agent):
         reward = torch.tensor([reward], dtype=torch.float32, device=device)
 
         if done:
-            next_state = None
+            next_obs = None
         else:
-            next_state = obs
+            next_obs = obs
 
         self.previous_action = int(self.previous_action)
         # print("#####")
-        # print("State:", self.previous_state)
+        # print("Observation:", self.previous_obs)
         # print("Action:", self.previous_action)
-        # print("Next State:", next_state)
+        # print("Next observation:", next_obs)
         # print("Reward:", reward)
         # print("\n")
 
-        self.memory.push(self.previous_state, torch.tensor([[self.previous_action]], device=device, dtype=torch.long), next_state, reward)
+        self.memory.push(self.previous_obs, torch.tensor([[self.previous_action]], device=device, dtype=torch.long), next_obs, reward)
 
-        self.previous_state = obs
+        self.previous_obs = obs
 
         self.optimize_model()
 

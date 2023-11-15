@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning, module="gym") 
 
-def _game_loop(env, render):
+def _game_loop(env, render, mixer = None):
     """
     """
     nobs = env.reset()
@@ -47,11 +47,24 @@ def _game_loop(env, render):
 
     while not done:
         steps += 1
-        # actions = env.action_space.sample()
+
         actions = []
-        for i in range(len(env.players)):
-            player = env.players[i]
-            actions.append(player.choose_action(nobs[i]))
+        if mixer is None:
+            # each player will return an action
+            for i in range(len(env.players)):
+                player = env.players[i]
+                actions.append(player.choose_action(nobs[i]))
+        else:
+            # each player will return their Q values for that state
+            # and the mixer will choose the action for each player
+            q_values = []
+            for i in range(len(env.players)):
+                player = env.players[i]
+                player_q = player.get_qvalues(nobs[i])
+                # print("Player {0} Q values: {1}".format(i, player_q))
+                q_values.append(player_q)
+            actions = mixer(q_values, nobs)
+            print("Actions: {0}".format(actions))
 
         nobs, nreward, ndone, _ = env.step(actions)
 
@@ -88,7 +101,8 @@ def main(game_count=1, render=False):
     env = gym.make(env_id)
 
     # print("Env state shape", env.observation_space[0].shape[0]*len(env.players))
-    mixer = QMixer(len(env.players), env.observation_space[0].shape[0]*len(env.players))
+    # mixer = QMixer(len(env.players), env.observation_space[0].shape[0]*len(env.players))
+    mixer = None
     
     agents = [DQNAgent for _ in range(len(env.players))]
     for i in range(len(env.players)):
@@ -99,7 +113,7 @@ def main(game_count=1, render=False):
 
     episode_results = {}
     for episode in trange(game_count):
-        steps, env = _game_loop(env, render)
+        steps, env = _game_loop(env, render, mixer)
         # create dict with results
         player_scores = [player.score for player in env.players]
         # score should be 1 if all food is collected
