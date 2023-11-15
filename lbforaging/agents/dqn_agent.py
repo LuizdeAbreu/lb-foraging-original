@@ -7,7 +7,7 @@ import torch.optim as optim
 import torch.nn.functional as F
 
 from lbforaging.foraging.agent import Agent
-from lbforaging.agents.dqn import DQN
+from lbforaging.agents.networks.dqn import DQN
 from lbforaging.foraging.environment import Action, ForagingEnv as Env
 from lbforaging.agents.helpers import ReplayMemory, Transition
 
