@@ -11,7 +11,7 @@ from lbforaging.agents.dqn_agent import DQNAgent
 from enum import Enum
 from tqdm import trange
 
-from lbforaging.agents.networks.qmixer import QMixer
+from lbforaging.agents.qmix_controller import QMIX_Controller
 
 class Action(Enum):
     NONE = 0
@@ -102,15 +102,22 @@ def main(game_count=1, render=False):
 
     state_shape = env.observation_space[0].shape[0]*len(env.players)
     # print("Env state shape", state_shape)
-    mixer = QMixer(len(env.players), state_shape)
+    mixer = True
     # mixer = None
     
     agents = [DQNAgent for _ in range(len(env.players))]
-    for i in range(len(env.players)):
-        player = env.players[i]
-        player.set_controller(agents[i](env.players[i]))
-        if player.name == "DQN Agent":
-            player.init_from_env(env, mixer)
+    if mixer is None:
+        for i in range(len(env.players)):
+            player = env.players[i]
+            player.set_controller(agents[i](env.players[i]))
+            if player.name == "DQN Agent":
+                player.init_from_env(env)
+    else:
+        mixer = QMIX_Controller(env.players[0])
+        for i in range(1, len(env.players)):
+            player = env.players[i]
+            player.set_controller(mixer.add_player(env.players[i]))
+        mixer.init_from_env(env)
 
     episode_results = {}
     for episode in trange(game_count):

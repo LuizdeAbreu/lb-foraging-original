@@ -41,6 +41,9 @@ class Agent:
     def init_from_env(self, env, mixer = None):
         raise NotImplemented("Agent does not have init from end implemented method or does not need it")
 
+    def add_player(self, player):
+        raise NotImplemented("Agent does not have add player implemented method or does not need it")
+
     def _closest_food(self, obs, max_food_level=None, start=None):
 
         if start is None:
