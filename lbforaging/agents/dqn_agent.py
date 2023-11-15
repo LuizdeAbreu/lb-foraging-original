@@ -11,7 +11,6 @@ from lbforaging.foraging.agent import Agent
 from lbforaging.agents.networks.dqn import DQN
 from lbforaging.foraging.environment import Action, ForagingEnv as Env
 from lbforaging.agents.helpers import ReplayMemory, Transition
-from lbforaging.agents.networks.qmixer import QMixer
 
 # https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html
 
@@ -40,17 +39,13 @@ class DQNAgent(Agent):
         self.previous_action = None
         self.steps_done = 0
 
-    def init_from_env(self, env, mixer = None):
+    def init_from_env(self, env):
         n_observations = env.observation_space[0].shape[0]
         n_actions = env.action_space[0].n
         self.policy_net = DQN(n_observations, n_actions).to(device)
         self.target_net = DQN(n_observations, n_actions).to(device)
         self.target_net.load_state_dict(self.policy_net.state_dict())
         self.params = list(self.policy_net.parameters())
-        if mixer is not None:
-            self.mixer = mixer
-            self.params += list(self.mixer.parameters())
-            self.target_mixer = copy.deepcopy(self.mixer)
         self.optimizer = optim.AdamW(self.params, lr=LR, amsgrad=True)
         self.memory = ReplayMemory(10000)
 
