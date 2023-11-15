@@ -8,9 +8,9 @@ class QMixer(nn.Module):
     def __init__(self, 
         n_agents,
         state_shape,
-        mixing_embed_dim,
-        hypernet_layers = 1,
-        hypernet_embed = 32,
+        mixing_embed_dim = 32,
+        hypernet_layers = 2,
+        hypernet_embed = 64,
     ):
         super(QMixer, self).__init__()
         
