@@ -6,7 +6,7 @@ import gym
 import numpy as np
 from gym.envs.registration import register
 from lbforaging.agents.random_agent import RandomAgent
-from lbforaging.agents.q_agent import QAgent
+# from lbforaging.agents.q_agent import QAgent
 from lbforaging.agents.dqn_agent import DQNAgent
 from enum import Enum
 from tqdm import trange
