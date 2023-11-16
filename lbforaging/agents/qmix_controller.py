@@ -128,6 +128,14 @@ class QMIX_Controller(Agent):
             target_mixer_state_dict[key] = TAU * mixer_state_dict[key] + (1 - TAU) * target_mixer_state_dict[key]
         self.target_mixer.load_state_dict(target_mixer_state_dict)
 
+        # we also need to update the agent networks
+        for i in range(len(self.players)):
+            agent_state_dict = self.agent_networks[i].state_dict()
+            target_agent_state_dict = self.target_agent_networks[i].state_dict()
+            for key in agent_state_dict.keys():
+                target_agent_state_dict[key] = TAU * agent_state_dict[key] + (1 - TAU) * target_agent_state_dict[key]
+            self.target_agent_networks[i].load_state_dict(target_agent_state_dict)
+
     def optimize_model(self):
         if len(self.memory) < BATCH_SIZE:
             return
@@ -185,10 +193,8 @@ class QMIX_Controller(Agent):
         # Compute the expected Q values
         expected_state_action_values = (next_state_values * GAMMA) + sum_rewards_batch
 
-        # Compute Huber loss
+        # Compute loss
         criterion = nn.SmoothL1Loss()
-        # print("Mixer state action values shape: ", mixer_state_action_values.shape)
-        # print("Expected state action values shape: ", expected_state_action_values.shape)
         loss = criterion(mixer_state_action_values, expected_state_action_values)
 
         # Optimize the model
