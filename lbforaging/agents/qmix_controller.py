@@ -132,55 +132,60 @@ class QMIX_Controller(Agent):
         if len(self.memory) < BATCH_SIZE:
             return
         transitions = self.memory.sample(BATCH_SIZE)
-        # Transpose the batch (see https://stackoverflow.com/a/19343/3343043 for
-        # detailed explanation). This converts batch-array of Transitions
-        # to Transition of batch-arrays.
+
         batch = QMixTransition(*zip(*transitions))
 
-        # Compute a mask of non-final states and concatenate the batch elements
-        # (a final state would've been the one after which simulation ended)
         non_final_mask = torch.tensor(tuple(map(lambda s: s is not None,
                                             batch.next_states)), device=device, dtype=torch.bool)
         non_final_next_states = torch.cat([s for s in batch.next_states
                                                     if s is not None])
         state_batch = torch.cat(batch.states)
-        action_batch = torch.cat(batch.actions)
+        action_batch = torch.stack(batch.actions)
         reward_batch = torch.cat(batch.rewards)
 
-        # Compute Q(s_t, a) - the model computes Q(s_t), then we select the
-        # columns of actions taken. These are the actions which would've been taken
-        # for each batch state according to self.mixer
-        #make empty tensor
         agent_state_action_values = []
         for i in range(len(self.players)):
             agent_network = self.agent_networks[i]
-            # agent_state_action_values += agent_network(state_batch[:,i,:])
-            # fill tensor
-            agent_state_action_values.append(agent_network(state_batch[:,i,:]).max(1)[0].unsqueeze(1))
+            agent_actions = action_batch[:,i].long()
+            q_values = agent_network(state_batch[:,i,:])
+            select_action_q_values = q_values.gather(1, agent_actions.unsqueeze(1))
+            agent_state_action_values.append(select_action_q_values)
 
         # transform list to tensor
         agent_state_action_values = torch.stack(agent_state_action_values, dim=0)
         # should be (batch size, number of agents, q_values (one for each action))
         agent_state_action_values = agent_state_action_values.transpose(0,1)
-        state_action_values = self.mixer(agent_state_action_values, state_batch).squeeze(1)
-        # print("state_action_values: ", state_action_values)
-        print("state_action_values: ", state_action_values.shape)
+        mixer_state_action_values = self.mixer(agent_state_action_values, state_batch).squeeze(1)
+        
+        target_agent_state_action_values = []
+        for i in range(len(self.players)):
+            target_agent_network = self.target_agent_networks[i]
+            target_agent_actions = action_batch[:,i].long()
+            target_q_values = target_agent_network(non_final_next_states[:,i,:])
+            # get target actions only for non final states
+            target_agent_actions = target_agent_actions[non_final_mask]
+            target_select_action_q_values = target_q_values.gather(1, target_agent_actions.unsqueeze(1))
+            target_agent_state_action_values.append(target_select_action_q_values)
+        
+        # transform list to tensor
+        target_agent_state_action_values = torch.stack(target_agent_state_action_values, dim=0)
+        target_agent_state_action_values = target_agent_state_action_values.transpose(0,1)
 
         # Compute V(s_{t+1}) for all next states.
         # Expected values of actions for non_final_next_states are computed based
         # on the "older" target_net; selecting their best reward with max(1)[0].
         # This is merged based on the mask, such that we'll have either the expected
         # state value or 0 in case the state was final.
-        next_state_values = torch.zeros(BATCH_SIZE, device=device)
+        next_state_values = torch.zeros(BATCH_SIZE, 1, device=device)
         with torch.no_grad():
-            next_state_values[non_final_mask] = self.target_mixer(non_final_next_states).max(1)[0]
+            next_state_values[non_final_mask] = self.target_mixer(target_agent_state_action_values, non_final_next_states).max(1)[0]
             
         # Compute the expected Q values
         expected_state_action_values = (next_state_values * GAMMA) + reward_batch
 
         # Compute Huber loss
         criterion = nn.SmoothL1Loss()
-        loss = criterion(state_action_values, expected_state_action_values.unsqueeze(1))
+        loss = criterion(mixer_state_action_values, expected_state_action_values.unsqueeze(1))
 
         # Optimize the model
         self.optimizer.zero_grad()
