@@ -137,8 +137,10 @@ class QMIX_Controller(Agent):
                 target_agent_state_dict[key] = TAU * agent_state_dict[key] + (1 - TAU) * target_agent_state_dict[key]
             self.target_agent_networks[i].load_state_dict(target_agent_state_dict)
 
-        if (self.steps_done - self.last_saved_model_step >= 1000):
-            self.save_models()
+        # steps_since_last_save = self.steps_done - self.last_saved_model_step
+        # print("steps since last save: " + str(steps_since_last_save))
+        # if (steps_since_last_save >= 1000):
+        #     self.save_models()
 
     def optimize_model(self):
         if len(self.memory) < BATCH_SIZE:
