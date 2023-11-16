@@ -48,8 +48,6 @@ def _game_loop(env, render, mixer = None):
     while not done:
         steps += 1
 
-        global_state = ninfo["global"]
-
         actions = []
         if mixer is None:
             # each player will return an action
@@ -57,7 +55,7 @@ def _game_loop(env, render, mixer = None):
                 player = env.players[i]
                 actions.append(player.choose_action(nobs[i]))
         else:
-            actions = mixer.choose_action(global_state)
+            actions = mixer.choose_action(nobs)
 
         nobs, nreward, ndone, ninfo = env.step(actions)
 

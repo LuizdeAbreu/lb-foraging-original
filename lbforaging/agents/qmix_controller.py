@@ -74,28 +74,30 @@ class QMIX_Controller(Agent):
             math.exp(-1. * self.steps_done / EPS_DECAY)
         self.steps_done += 1
 
-        if sample > eps_threshold and first != False:
+        if sample > eps_threshold and first == False:
             with torch.no_grad():
                 actions = []
                 for i in range(len(self.players)):
                     agent_network = self.agent_networks[i]
-                    agent_q_values = agent_network(torch.tensor(states[i], dtype=torch.float32, device=device).unsqueeze(0))
-                    actions.append(agent_q_values.max(1)[1].view(1, 1))
+                    state = torch.tensor(states[i], dtype=torch.float32, device=device).unsqueeze(0)
+                    agent_q_values = agent_network(state)
+                    result = agent_q_values.max(1)[1].view(1, 1)
+                    action = Action(result.item())
+                    actions.append(action)
                 return actions
         else:
             return [random.choice(Env.action_set) for _ in range(len(self.players))]
 
     def _step(self, states, rewards, done, info):
+        states = np.array(states)
+        states = torch.tensor(states, dtype=torch.float32, device=device).unsqueeze(0)
         if (self.previous_states is None):
             self.previous_states = states
             self.previous_global_state = info["global"]
-            self.previous_actions = self.choose_action(states, first=True)
+            self.previous_actions = self.choose_action(states, True)
             return 
-        
-        states = np.array(states)
-        states = torch.tensor(states, dtype=torch.float32, device=device).unsqueeze(0)
-        rewards = torch.tensor([rewards], dtype=torch.float32, device=device)
 
+        rewards = torch.tensor([rewards], dtype=torch.float32, device=device)
 
         global_state = info["global"] 
 
@@ -104,7 +106,9 @@ class QMIX_Controller(Agent):
             states = None
             global_state = None  
 
-        # self.memory.push(self.previous_states, self.previous_actions, states, rewards)
+        self.previous_actions = [int(x) for x in self.previous_actions]
+        self.previous_actions = torch.tensor(self.previous_actions, dtype=torch.float32, device=device)
+
         self.memory.push_qmix(self.previous_states, self.previous_actions, states, rewards, self.previous_global_state, global_state)
 
         self.previous_states = states
@@ -129,7 +133,6 @@ class QMIX_Controller(Agent):
 
         # Compute a mask of non-final states and concatenate the batch elements
         # (a final state would've been the one after which simulation ended)
-        print("batch", batch)
         non_final_mask = torch.tensor(tuple(map(lambda s: s is not None,
                                             batch.next_states)), device=device, dtype=torch.bool)
         non_final_next_states = torch.cat([s for s in batch.next_states
@@ -141,7 +144,11 @@ class QMIX_Controller(Agent):
         # Compute Q(s_t, a) - the model computes Q(s_t), then we select the
         # columns of actions taken. These are the actions which would've been taken
         # for each batch state according to self.mixer
-        state_action_values = self.mixer(state_batch).gather(1, action_batch)
+        for i in range(len(self.players)):
+            agent_network = self.agent_networks[i]
+            agent_state_action_values = agent_network(state_batch[:,i,:]).gather(1, action_batch[:,i,:])
+
+        state_action_values = self.mixer(agent_state_action_values, state_batch).gather(1, action_batch)
 
         # Compute V(s_{t+1}) for all next states.
         # Expected values of actions for non_final_next_states are computed based
