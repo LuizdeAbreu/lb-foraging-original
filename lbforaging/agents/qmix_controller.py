@@ -144,10 +144,18 @@ class QMIX_Controller(Agent):
         # Compute Q(s_t, a) - the model computes Q(s_t), then we select the
         # columns of actions taken. These are the actions which would've been taken
         # for each batch state according to self.mixer
+        #make empty tensor
+        agent_state_action_values = []
         for i in range(len(self.players)):
             agent_network = self.agent_networks[i]
-            agent_state_action_values = agent_network(state_batch[:,i,:]).gather(1, action_batch[:,i,:])
+            # agent_state_action_values += agent_network(state_batch[:,i,:])
+            # fill tensor
+            agent_state_action_values.append(agent_network(state_batch[:,i,:]))
 
+        # transform list to tensor
+        agent_state_action_values = torch.stack(agent_state_action_values, dim=0)
+        # should be (batch size, number of agents, q_values (one for each action))
+        agent_state_action_values = agent_state_action_values.transpose(0,1)
         state_action_values = self.mixer(agent_state_action_values, state_batch).gather(1, action_batch)
 
         # Compute V(s_{t+1}) for all next states.
