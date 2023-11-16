@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning, module="gym") 
 
-def _game_loop(env, render, mixer = None):
+def _game_loop(env, render, mixer = None, episode=0):
     """
     """
     nobs, ninfo = env.reset()
@@ -63,9 +63,9 @@ def _game_loop(env, render, mixer = None):
             # each player will learn from the experience
             for i in range(len(env.players)):
                 player = env.players[i]
-                player.step(nobs[i], nreward[i], ndone[i])
+                player.step(nobs[i], nreward[i], ndone[i], episode)
         else:
-            mixer.step(nobs, nreward, ndone, ninfo)
+            mixer.step(nobs, nreward, ndone, ninfo, episode)
 
         if render:
             env.render()
@@ -116,7 +116,7 @@ def main(game_count=1, render=False):
 
     episode_results = {}
     for episode in trange(game_count):
-        steps, env = _game_loop(env, render, mixer)
+        steps, env = _game_loop(env, render, mixer, episode)
         # create dict with results
         player_scores = [player.score for player in env.players]
         # score should be 1 if all food is collected

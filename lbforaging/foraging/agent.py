@@ -18,7 +18,7 @@ class Agent:
     def __getattr__(self, item):
         return getattr(self.player, item)
 
-    def _step(self, obs, reward=None, done=False, info = None):
+    def _step(self, obs, reward=None, done=False, info = None, episode = 0):
         self.observed_position = next(
             (x for x in obs.players if x.is_self), None
         ).position
@@ -29,8 +29,8 @@ class Agent:
 
         return action
 
-    def step(self, obs, reward=None, done=False, info = None):
-        return self._step(obs, reward, done, info)
+    def step(self, obs, reward=None, done=False, info = None, episode = 0):
+        return self._step(obs, reward, done, info, episode)
 
     def get_qvalues(self, obs):
         raise NotImplemented("You must implement an agent")

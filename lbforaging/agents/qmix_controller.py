@@ -95,7 +95,7 @@ class QMIX_Controller(Agent):
         else:
             return [random.choice(Env.action_set) for _ in range(len(self.players))]
 
-    def _step(self, states, rewards, done, info):
+    def _step(self, states, rewards, done, info, episode):
         states = np.array(states)
         states = torch.tensor(states, dtype=torch.float32, device=device).unsqueeze(0)
         if (self.previous_states is None):
