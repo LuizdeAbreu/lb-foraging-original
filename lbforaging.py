@@ -37,7 +37,7 @@ warnings.filterwarnings("ignore", category=UserWarning, module="gym")
 def _game_loop(env, render, mixer = None):
     """
     """
-    nobs = env.reset()
+    nobs, ninfo = env.reset()
     steps = 0
     done = False
 
@@ -48,6 +48,8 @@ def _game_loop(env, render, mixer = None):
     while not done:
         steps += 1
 
+        global_state = ninfo["global"]
+
         actions = []
         if mixer is None:
             # each player will return an action
@@ -55,9 +57,9 @@ def _game_loop(env, render, mixer = None):
                 player = env.players[i]
                 actions.append(player.choose_action(nobs[i]))
         else:
-            actions = mixer.choose_action(nobs)
+            actions = mixer.choose_action(global_state)
 
-        nobs, nreward, ndone, _ = env.step(actions)
+        nobs, nreward, ndone, ninfo = env.step(actions)
 
         if mixer is None: 
             # each player will learn from the experience
@@ -65,7 +67,7 @@ def _game_loop(env, render, mixer = None):
                 player = env.players[i]
                 player.step(nobs[i], nreward[i], ndone[i])
         else:
-            mixer.step(nobs, nreward, ndone)
+            mixer.step(nobs, nreward, ndone, ninfo)
 
         if render:
             env.render()
@@ -97,8 +99,8 @@ def main(game_count=1, render=False):
     )
     env = gym.make(env_id)
 
-    mixer = True
-    # mixer = None
+    # mixer = True
+    mixer = None
     
     agents = [DQNAgent for _ in range(len(env.players))]
     if mixer is None:

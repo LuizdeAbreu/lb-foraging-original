@@ -76,22 +76,16 @@ class QMIX_Controller(Agent):
 
         if sample > eps_threshold and first != False:
             with torch.no_grad():
-                q_values = []
+                actions = []
                 for i in range(len(self.players)):
                     agent_network = self.agent_networks[i]
                     agent_q_values = agent_network(torch.tensor(state[i], dtype=torch.float32, device=device).unsqueeze(0))
-                    q_values.append(agent_q_values[0])
-                
-                state = np.array(state)
-                result = self.mixer(q_values, torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0))
-                print("RESULT CHOOSE ACTION MIXER", result)
-                actions = result.max(1)[1].view(1, 1)
-                # print("ACTION CHOOSE ACTION MIXER", action)
+                    actions.append(agent_q_values.max(1)[1].view(1, 1))
                 return actions
         else:
             return [random.choice(Env.action_set) for _ in range(len(self.players))]
 
-    def _step(self, state, reward, done):
+    def _step(self, state, reward, done, info):
         if (self.previous_state is None):
             self.previous_state = state
             self.previous_actions = self.choose_action(state, first=True)

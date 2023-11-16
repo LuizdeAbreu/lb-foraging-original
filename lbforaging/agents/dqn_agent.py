@@ -75,7 +75,7 @@ class DQNAgent(Agent):
         self.previous_action = result
         return result
 
-    def _step(self, obs, reward, done):
+    def _step(self, obs, reward, done, _):
         if (self.previous_obs is None):
             self.previous_obs = torch.tensor(obs, dtype=torch.float32, device=device).unsqueeze(0)
             self.previous_action = self.choose_action(obs)

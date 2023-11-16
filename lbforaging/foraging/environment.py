@@ -48,8 +48,8 @@ class Player:
     def set_controller(self, controller):
         self.controller = controller
 
-    def step(self, obs, reward=None, done=False):
-        return self.controller._step(obs, reward, done)
+    def step(self, obs, reward=None, done=False, info=None):
+        return self.controller._step(obs, reward, done, info)
 
     def get_qvalues(self, obs):
         return self.controller.get_qvalues(obs)
