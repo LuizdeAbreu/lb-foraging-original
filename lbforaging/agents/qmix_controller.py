@@ -13,6 +13,7 @@ from lbforaging.foraging.environment import Action, ForagingEnv as Env
 from lbforaging.agents.helpers import ReplayMemory, Transition
 from lbforaging.agents.networks.qmixer import QMixer
 from lbforaging.agents.dqn_agent import DQNAgent
+from lbforaging.agents.networks.dqn import DQN
 
 BATCH_SIZE = 128
 GAMMA = 0.99
@@ -46,15 +47,15 @@ class QMIX_Controller(Agent):
         if (len(env.players) != len(self.players)):
             raise ValueError("The number of players in the environment does not match the number of players in the controller.")
         n_observations = env.observation_space[0].shape[0]
+        n_actions = env.action_space[0].n
         state_shape = n_observations*len(env.players)
         
         self.params = []
         
-        for player in self.players:
-            agent = DQNAgent(player)
-            agent.init_from_env(env)
-            self.agent_networks.append(agent)
-            self.params += list(agent.policy_net.parameters())
+        for _ in self.players:
+            network = DQN(n_observations, n_actions).to(device)
+            self.agent_networks.append(network)
+            self.params += list(network.parameters())
 
         self.mixer = QMixer(len(env.players), state_shape)
         self.target_mixer = copy.deepcopy(self.mixer)
@@ -74,7 +75,12 @@ class QMIX_Controller(Agent):
 
         if sample > eps_threshold and first != False:
             with torch.no_grad():
-                result = self.mixer(torch.tensor(obs, dtype=torch.float32, device=device).unsqueeze(0))
+                q_values = []
+                for i in range(len(self.players)):
+                    agent_network = self.agent_networks[i]
+                    agent_q_values = agent_network(torch.tensor(obs[i], dtype=torch.float32, device=device).unsqueeze(0))
+                    q_values.append(agent_q_values[0])
+                result = self.mixer(q_values, torch.tensor(obs, dtype=torch.float32, device=device).unsqueeze(0))
                 print("RESULT CHOOSE ACTION MIXER", result)
                 return result.max(1)[1].view(1, 1)
         else:
