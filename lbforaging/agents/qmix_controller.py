@@ -73,6 +73,7 @@ class QMIX_Controller(Agent):
 
         self.last_target_update_episode = 0    
         self.last_target_update_step = 0
+        self.last_saved_model_step = 0
 
     def choose_action(self, states, first=False):
         sample = random.random()
@@ -135,6 +136,9 @@ class QMIX_Controller(Agent):
             for key in agent_state_dict.keys():
                 target_agent_state_dict[key] = TAU * agent_state_dict[key] + (1 - TAU) * target_agent_state_dict[key]
             self.target_agent_networks[i].load_state_dict(target_agent_state_dict)
+
+        if (self.steps_done - self.last_saved_model_step >= 1000):
+            self.save_models()
 
     def optimize_model(self):
         if len(self.memory) < BATCH_SIZE:
