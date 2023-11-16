@@ -58,7 +58,7 @@ class QMIX_Controller(Agent):
             self.agent_networks.append(network)
             self.params += list(network.parameters())
 
-        self.mixer = QMixer(len(env.players), state_shape)
+        self.mixer = QMixer(len(env.players), state_shape, n_actions)
         self.target_mixer = copy.deepcopy(self.mixer)
 
         self.params += list(self.mixer.parameters())
@@ -85,7 +85,9 @@ class QMIX_Controller(Agent):
                 state = np.array(state)
                 result = self.mixer(q_values, torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0))
                 print("RESULT CHOOSE ACTION MIXER", result)
-                return result.max(1)[1].view(1, 1)
+                actions = result.max(1)[1].view(1, 1)
+                # print("ACTION CHOOSE ACTION MIXER", action)
+                return actions
         else:
             return [random.choice(Env.action_set) for _ in range(len(self.players))]
 
