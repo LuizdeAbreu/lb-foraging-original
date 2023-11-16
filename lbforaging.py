@@ -99,8 +99,8 @@ def main(game_count=1, render=False):
     )
     env = gym.make(env_id)
 
-    # mixer = True
-    mixer = None
+    mixer = True
+    # mixer = None
     
     agents = [DQNAgent for _ in range(len(env.players))]
     if mixer is None:

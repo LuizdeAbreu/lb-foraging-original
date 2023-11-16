@@ -11,7 +11,7 @@ import torch.nn.functional as F
 from lbforaging.foraging.agent import Agent
 from lbforaging.agents.networks.dqn import DQN
 from lbforaging.foraging.environment import Action, ForagingEnv as Env
-from lbforaging.agents.helpers import ReplayMemory, Transition
+from lbforaging.agents.helpers import ReplayMemory, QMixTransition, Transition
 from lbforaging.agents.networks.qmixer import QMixer
 from lbforaging.agents.dqn_agent import DQNAgent
 from lbforaging.agents.networks.dqn import DQN
@@ -35,8 +35,11 @@ class QMIX_Controller(Agent):
         self.target_net = None
         self.memory = None
         self.optimizer = None
-        self.previous_state = None
+        
+        self.previous_states = None
         self.previous_actions = None
+        self.previous_global_state = None
+
         self.steps_done = 0
         self.players = [player]
         self.agent_networks = []
@@ -68,7 +71,7 @@ class QMIX_Controller(Agent):
         self.last_target_update_episode = 0    
         self.last_target_update_step = 0
 
-    def choose_action(self, state, first=False):
+    def choose_action(self, states, first=False):
         sample = random.random()
         eps_threshold = EPS_END + (EPS_START - EPS_END) * \
             math.exp(-1. * self.steps_done / EPS_DECAY)
@@ -79,28 +82,34 @@ class QMIX_Controller(Agent):
                 actions = []
                 for i in range(len(self.players)):
                     agent_network = self.agent_networks[i]
-                    agent_q_values = agent_network(torch.tensor(state[i], dtype=torch.float32, device=device).unsqueeze(0))
+                    agent_q_values = agent_network(torch.tensor(states[i], dtype=torch.float32, device=device).unsqueeze(0))
                     actions.append(agent_q_values.max(1)[1].view(1, 1))
                 return actions
         else:
             return [random.choice(Env.action_set) for _ in range(len(self.players))]
 
-    def _step(self, state, reward, done, info):
-        if (self.previous_state is None):
-            self.previous_state = state
-            self.previous_actions = self.choose_action(state, first=True)
+    def _step(self, states, rewards, done, info):
+        if (self.previous_states is None):
+            self.previous_states = states
+            self.previous_global_state = info["global"]
+            self.previous_actions = self.choose_action(states, first=True)
             return 
         
-        state = np.array(state)
-        state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
-        reward = torch.tensor([reward], dtype=torch.float32, device=device)
+        states = np.array(states)
+        states = torch.tensor(states, dtype=torch.float32, device=device).unsqueeze(0)
+        rewards = torch.tensor([rewards], dtype=torch.float32, device=device)
+
+        global_state = info["global"]
 
         if done:
-            state = None
+            states = None
+            global_state = None
 
-        self.memory.push(self.previous_state, self.previous_actions, state, reward)
+        self.memory.push(self.previous_states, self.previous_actions, states, rewards)
+        self.memory.push_qmix(self.previous_states, self.previous_actions, states, rewards, self.previous_global_state, global_state)
 
-        self.previous_state = state
+        self.previous_states = states
+        self.previous_global_state = global_state
 
         self.optimize_model()
 
