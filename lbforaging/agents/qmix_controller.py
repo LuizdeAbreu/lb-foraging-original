@@ -30,9 +30,6 @@ class QMIX_Controller(Agent):
 
     def __init__(self, player):
         super().__init__(player)
-
-        self.policy_net = None
-        self.target_net = None
         self.memory = None
         self.optimizer = None
         
@@ -99,13 +96,15 @@ class QMIX_Controller(Agent):
         states = torch.tensor(states, dtype=torch.float32, device=device).unsqueeze(0)
         rewards = torch.tensor([rewards], dtype=torch.float32, device=device)
 
-        global_state = info["global"]
 
-        if done:
+        global_state = info["global"] 
+
+        all_done = all(flag == True for (flag) in done)
+        if (all_done):
             states = None
-            global_state = None
+            global_state = None  
 
-        self.memory.push(self.previous_states, self.previous_actions, states, rewards)
+        # self.memory.push(self.previous_states, self.previous_actions, states, rewards)
         self.memory.push_qmix(self.previous_states, self.previous_actions, states, rewards, self.previous_global_state, global_state)
 
         self.previous_states = states
@@ -126,22 +125,23 @@ class QMIX_Controller(Agent):
         # Transpose the batch (see https://stackoverflow.com/a/19343/3343043 for
         # detailed explanation). This converts batch-array of Transitions
         # to Transition of batch-arrays.
-        batch = Transition(*zip(*transitions))
+        batch = QMixTransition(*zip(*transitions))
 
         # Compute a mask of non-final states and concatenate the batch elements
         # (a final state would've been the one after which simulation ended)
+        print("batch", batch)
         non_final_mask = torch.tensor(tuple(map(lambda s: s is not None,
-                                            batch.next_state)), device=device, dtype=torch.bool)
-        non_final_next_states = torch.cat([s for s in batch.next_state
+                                            batch.next_states)), device=device, dtype=torch.bool)
+        non_final_next_states = torch.cat([s for s in batch.next_states
                                                     if s is not None])
-        state_batch = torch.cat(batch.state)
-        action_batch = torch.cat(batch.action)
-        reward_batch = torch.cat(batch.reward)
+        state_batch = torch.cat(batch.states)
+        action_batch = torch.cat(batch.actions)
+        reward_batch = torch.cat(batch.rewards)
 
         # Compute Q(s_t, a) - the model computes Q(s_t), then we select the
         # columns of actions taken. These are the actions which would've been taken
-        # for each batch state according to self.policy_net
-        state_action_values = self.policy_net(state_batch).gather(1, action_batch)
+        # for each batch state according to self.mixer
+        state_action_values = self.mixer(state_batch).gather(1, action_batch)
 
         # Compute V(s_{t+1}) for all next states.
         # Expected values of actions for non_final_next_states are computed based
@@ -150,7 +150,7 @@ class QMIX_Controller(Agent):
         # state value or 0 in case the state was final.
         next_state_values = torch.zeros(BATCH_SIZE, device=device)
         with torch.no_grad():
-            next_state_values[non_final_mask] = self.target_net(non_final_next_states).max(1)[0]
+            next_state_values[non_final_mask] = self.target_mixer(non_final_next_states).max(1)[0]
             
         # Compute the expected Q values
         expected_state_action_values = (next_state_values * GAMMA) + reward_batch
