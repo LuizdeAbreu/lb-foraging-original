@@ -12,7 +12,7 @@ from lbforaging.foraging.agent import Agent
 from lbforaging.agents.networks.dqn import DQN
 from lbforaging.foraging.environment import Action, ForagingEnv as Env
 from lbforaging.agents.helpers import ReplayMemory, QMixTransition, Transition
-from lbforaging.agents.networks.qmixer import QMixer
+from lbforaging.agents.networks.qmixer import QMixNet
 from lbforaging.agents.dqn_agent import DQNAgent
 from lbforaging.agents.networks.dqn import DQN
 
@@ -64,10 +64,10 @@ class QMIX_Controller(Agent):
             self.target_agent_networks.append(target_network)
             self.params += list(network.parameters())
 
-        self.mixer = QMixer(len(env.players), state_shape, n_actions)
+        self.mixer = QMixNet(len(env.players), state_shape, n_actions)
         self.target_mixer = copy.deepcopy(self.mixer)
-
         self.params += list(self.mixer.parameters())
+
         self.optimizer = optim.AdamW(params=self.params, lr=LR, amsgrad=True)
         self.memory = ReplayMemory(10000)
 
@@ -123,20 +123,6 @@ class QMIX_Controller(Agent):
 
         self.optimize_model()
 
-        mixer_state_dict = self.mixer.state_dict()
-        target_mixer_state_dict = self.target_mixer.state_dict()
-        for key in mixer_state_dict.keys():
-            target_mixer_state_dict[key] = TAU * mixer_state_dict[key] + (1 - TAU) * target_mixer_state_dict[key]
-        self.target_mixer.load_state_dict(target_mixer_state_dict)
-
-        # we also need to update the agent networks
-        for i in range(len(self.players)):
-            agent_state_dict = self.agent_networks[i].state_dict()
-            target_agent_state_dict = self.target_agent_networks[i].state_dict()
-            for key in agent_state_dict.keys():
-                target_agent_state_dict[key] = TAU * agent_state_dict[key] + (1 - TAU) * target_agent_state_dict[key]
-            self.target_agent_networks[i].load_state_dict(target_agent_state_dict)
-
         # steps_since_last_save = self.steps_done - self.last_saved_model_step
         # print("steps since last save: " + str(steps_since_last_save))
         # if (steps_since_last_save >= 1000):
@@ -169,7 +155,11 @@ class QMIX_Controller(Agent):
         agent_state_action_values = torch.stack(agent_state_action_values, dim=0)
         # should be (batch size, number of agents, q_values (one for each action))
         agent_state_action_values = agent_state_action_values.transpose(0,1)
+        # mixer_state_action_values = qtot(s_t, a_t)
         mixer_state_action_values = self.mixer(agent_state_action_values, state_batch).squeeze(1)
+
+        # Qtot(s_t, a_t) = retorna os valores esperados de um estado global e de uma joint action (uma ação pra cada agente)
+        # Qa (o_t, u_t) = retorna o valor esperado da observação do agente e uma ação que ele tomou
         
         target_agent_state_action_values = []
         for i in range(len(self.players)):
@@ -210,6 +200,20 @@ class QMIX_Controller(Agent):
         # In-place gradient clipping
         torch.nn.utils.clip_grad_value_(self.params, 100)
         self.optimizer.step()
+
+        mixer_state_dict = self.mixer.state_dict()
+        target_mixer_state_dict = self.target_mixer.state_dict()
+        for key in mixer_state_dict.keys():
+            target_mixer_state_dict[key] = TAU * mixer_state_dict[key] + (1 - TAU) * target_mixer_state_dict[key]
+        self.target_mixer.load_state_dict(target_mixer_state_dict)
+
+        # we also need to update the agent networks
+        for i in range(len(self.players)):
+            agent_state_dict = self.agent_networks[i].state_dict()
+            target_agent_state_dict = self.target_agent_networks[i].state_dict()
+            for key in agent_state_dict.keys():
+                target_agent_state_dict[key] = TAU * agent_state_dict[key] + (1 - TAU) * target_agent_state_dict[key]
+            self.target_agent_networks[i].load_state_dict(target_agent_state_dict)
 
     def save_models(self):
         torch.save(self.mixer.state_dict(), "saved/mixer.pt")

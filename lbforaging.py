@@ -77,7 +77,7 @@ def _game_loop(env, render, mixer = None, episode=0):
 
 
 def main(game_count=1, render=False):
-    s=6
+    s=8
     p=3
     f=4
     c=0
@@ -100,7 +100,7 @@ def main(game_count=1, render=False):
     mixer = True
     # mixer = None
     
-    agents = [DQNAgent for _ in range(len(env.players))]
+    agents = [RandomAgent for _ in range(len(env.players))]
     if mixer is None:
         for i in range(len(env.players)):
             player = env.players[i]

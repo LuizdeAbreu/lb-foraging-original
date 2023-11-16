@@ -4,7 +4,7 @@ import torch.nn.functional as F
 import numpy as np
 
 
-class QMixer(nn.Module):
+class QMixNet(nn.Module):
     def __init__(self, 
         n_agents,
         state_shape,
@@ -12,7 +12,7 @@ class QMixer(nn.Module):
         hypernet_layers = 2,
         hypernet_embed = 64,
     ):
-        super(QMixer, self).__init__()
+        super(QMixNet, self).__init__()
         
         # print("STATE SHAPE", state_shape)
         self.n_agents = n_agents

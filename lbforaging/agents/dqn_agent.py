@@ -103,13 +103,6 @@ class DQNAgent(Agent):
 
         self.optimize_model()
 
-        target_net_state_dict = self.target_net.state_dict()
-        policy_net_state_dict = self.policy_net.state_dict()
-        for key in policy_net_state_dict:
-            target_net_state_dict[key] = policy_net_state_dict[key]*TAU + target_net_state_dict[key]*(1-TAU)
-        self.target_net.load_state_dict(target_net_state_dict)     
-        
-
     def optimize_model(self):
         if len(self.memory) < BATCH_SIZE:
             return
@@ -157,5 +150,11 @@ class DQNAgent(Agent):
         # In-place gradient clipping
         torch.nn.utils.clip_grad_value_(self.params, 100)
         self.optimizer.step()
+
+        target_net_state_dict = self.target_net.state_dict()
+        policy_net_state_dict = self.policy_net.state_dict()
+        for key in policy_net_state_dict:
+            target_net_state_dict[key] = policy_net_state_dict[key]*TAU + target_net_state_dict[key]*(1-TAU)
+        self.target_net.load_state_dict(target_net_state_dict)     
 
     
