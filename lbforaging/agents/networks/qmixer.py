@@ -8,7 +8,7 @@ class QMixer(nn.Module):
         n_agents,
         state_shape,
         mixing_embed_dim = 32,
-        hypernet_layers = 2,
+        hypernet_layers = 1,
         hypernet_embed = 64,
     ):
         super(QMixer, self).__init__()
@@ -19,6 +19,7 @@ class QMixer(nn.Module):
         self.embed_dim = mixing_embed_dim
 
         if hypernet_layers == 1:
+            # receives state (63) and outputs a vector of size 32*n_agents
             self.hyper_w_1 = nn.Linear(self.state_dim, self.embed_dim * self.n_agents)
             self.hyper_w_final = nn.Linear(self.state_dim, self.embed_dim)
         elif hypernet_layers == 2:
@@ -34,6 +35,7 @@ class QMixer(nn.Module):
             raise Exception("Error setting number of hypernet layers.")
 
         # State dependent bias for hidden layer
+        # receives state (63) and outputs a vector of size 32
         self.hyper_b_1 = nn.Linear(self.state_dim, self.embed_dim)
 
         # V(s) instead of a bias for the last layers
@@ -42,24 +44,25 @@ class QMixer(nn.Module):
                                nn.Linear(self.embed_dim, 1))
 
     def forward(self, agent_qs, states):
-        # print("Agent Qs tensor INITIAL", agent_qs)
-        # print("Mixer input states INITIAL", states)
-        states = list(states)
-        for i in range(len(states)):
-            states[i] = torch.tensor(states[i], dtype=torch.float32)
-        agent_qs = torch.stack(agent_qs)
-        agent_qs = agent_qs.squeeze(1)
-        states  = torch.stack(states)
-        # print("Agent Qs tensor FINAL", agent_qs)
-        # print("Mixer input states FINAL", states)
+        agent_qs = torch.stack(agent_qs, dim=0)
+        # print("original agent qs", agent_qs)
+        if (agent_qs.dim() == 2):
+            # then we're in eval mode, so we need to add a batch dimension
+            agent_qs = agent_qs.unsqueeze(0)
+        # batch size
         bs = agent_qs.size(0)
         states = states.reshape(-1, self.state_dim)
-        agent_qs = agent_qs.view(-1, 1, self.n_agents)
+        # agent_qs = agent_qs.view(-1, 1, self.n_agents)
+        agent_qs = agent_qs.view(1, -1, self.n_agents)
         # First layer
         w1 = torch.abs(self.hyper_w_1(states))
         b1 = self.hyper_b_1(states)
         w1 = w1.view(-1, self.n_agents, self.embed_dim)
         b1 = b1.view(-1, 1, self.embed_dim)
+        # print("agent_qs", agent_qs)
+        # print("agent_qs.shape", agent_qs.shape)
+        # print("w1.shape", w1.shape)
+        # print("b1.shape", b1.shape)
         hidden = F.elu(torch.bmm(agent_qs, w1) + b1)
         # Second layer
         w_final = torch.abs(self.hyper_w_final(states))

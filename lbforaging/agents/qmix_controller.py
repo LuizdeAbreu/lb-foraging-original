@@ -1,6 +1,7 @@
 import random
 import math
 import copy
+import numpy as np
 
 import torch
 import torch.nn as nn
@@ -67,7 +68,7 @@ class QMIX_Controller(Agent):
         self.last_target_update_episode = 0    
         self.last_target_update_step = 0
 
-    def choose_action(self, obs, first=False):
+    def choose_action(self, state, first=False):
         sample = random.random()
         eps_threshold = EPS_END + (EPS_START - EPS_END) * \
             math.exp(-1. * self.steps_done / EPS_DECAY)
@@ -78,9 +79,11 @@ class QMIX_Controller(Agent):
                 q_values = []
                 for i in range(len(self.players)):
                     agent_network = self.agent_networks[i]
-                    agent_q_values = agent_network(torch.tensor(obs[i], dtype=torch.float32, device=device).unsqueeze(0))
+                    agent_q_values = agent_network(torch.tensor(state[i], dtype=torch.float32, device=device).unsqueeze(0))
                     q_values.append(agent_q_values[0])
-                result = self.mixer(q_values, torch.tensor(obs, dtype=torch.float32, device=device).unsqueeze(0))
+                
+                state = np.array(state)
+                result = self.mixer(q_values, torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0))
                 print("RESULT CHOOSE ACTION MIXER", result)
                 return result.max(1)[1].view(1, 1)
         else:
@@ -92,6 +95,7 @@ class QMIX_Controller(Agent):
             self.previous_actions = self.choose_action(state, first=True)
             return 
         
+        state = np.array(state)
         state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
         reward = torch.tensor([reward], dtype=torch.float32, device=device)
 
