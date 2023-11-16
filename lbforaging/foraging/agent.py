@@ -30,7 +30,7 @@ class Agent:
         return action
 
     def step(self, obs, reward=None, done=False):
-        raise NotImplemented("You must implement an agent")
+        return self._step(obs, reward, done)
 
     def get_qvalues(self, obs):
         raise NotImplemented("You must implement an agent")
