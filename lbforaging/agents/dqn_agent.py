@@ -61,10 +61,11 @@ class DQNAgent(Agent):
         result = None
         if sample > eps_threshold and self.policy_net is not None:
             with torch.no_grad():
+                # q_values will be a tensor of shape (1, n_actions)
+                q_values = self.get_qvalues(obs)
                 # t.max(1) will return the largest column value of each row.
                 # second column on max result is index of where max element was
                 # found, so we pick action with the larger expected reward.
-                q_values = self.get_qvalues(obs)
                 result = q_values.max(1)[1].view(1, 1)
                 action = Action(result.item())
                 self.previous_action = action

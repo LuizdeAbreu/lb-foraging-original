@@ -101,6 +101,8 @@ class ForagingEnv(Env):
         self.seed()
         self.players = [Player() for _ in range(players)]
 
+        self.global_player = Player()
+
         self.field = np.zeros(field_size, np.int32)
 
         self.penalty = penalty
@@ -170,7 +172,8 @@ class ForagingEnv(Env):
             min_obs = np.stack([agents_min, foods_min, access_min])
             max_obs = np.stack([agents_max, foods_max, access_max])
 
-        return gym.spaces.Box(np.array(min_obs), np.array(max_obs), dtype=np.float32)
+        result = gym.spaces.Box(np.array(min_obs), np.array(max_obs), dtype=np.float32)
+        return result
 
     @classmethod
     def from_obs(cls, obs):
@@ -311,6 +314,12 @@ class ForagingEnv(Env):
                     )
                     break
                 attempts += 1
+                
+        self.global_player.setup(
+            (self.rows//2, self.cols//2),
+            max_player_level,
+            self.field_size,
+        )
 
     def _is_valid_action(self, player, action):
         if action == Action.NONE:
@@ -459,6 +468,44 @@ class ForagingEnv(Env):
                 if p.is_self:
                     return p.reward
 
+        def global_info():
+            global_obs = self.Observation(
+                actions=[],
+                players=[
+                    self.PlayerObservation(
+                        position=self._transform_to_neighborhood(
+                            self.global_player.position, self.sight, a.position
+                        ),
+                        level=a.level,
+                        is_self=a == self.global_player,
+                        history=a.history,
+                        reward=a.reward if a == self.global_player else None,
+                    )
+                    for a in self.players
+                    if (
+                        min(
+                            self._transform_to_neighborhood(
+                                self.global_player.position, self.sight, a.position
+                            )
+                        )
+                        >= 0
+                    )
+                    and max(
+                        self._transform_to_neighborhood(
+                            self.global_player.position, self.sight, a.position
+                        )
+                    )
+                    <= 2 * self.sight
+                ],
+                # todo also check max?
+                field=np.copy(self.neighborhood(*self.global_player.position, self.sight)),
+                game_over=self.game_over,
+                sight=self.sight,
+                current_step=self.current_step,
+            )
+            global_obs = make_obs_array(global_obs)
+            return global_obs
+
         observations = [self.make_obs(player) for player in self.players]
         if self._grid_observation:
             layers = make_global_grid_arrays()
@@ -475,7 +522,9 @@ class ForagingEnv(Env):
         for i, obs in  enumerate(nobs):
             assert self.observation_space[i].contains(obs), \
                 f"obs space error: obs: {obs}, obs_space: {self.observation_space[i]}"
-        
+    
+        # global state info to use in QMIX
+        ninfo["global"] = global_info()
         return nobs, nreward, ndone, ninfo
 
     def reset(self):
@@ -490,8 +539,8 @@ class ForagingEnv(Env):
         self._game_over = False
         self._gen_valid_moves()
 
-        nobs, _, _, _ = self._make_gym_obs()
-        return nobs
+        nobs, _, _, ninfo = self._make_gym_obs()
+        return nobs, ninfo
 
     def step(self, actions):
         self.current_step += 1
