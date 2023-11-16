@@ -39,7 +39,11 @@ class QMIX_Controller(Agent):
 
         self.steps_done = 0
         self.players = [player]
+
+        self.mixer = None
+        self.target_mixer = None
         self.agent_networks = []
+        self.target_agent_networks = []
 
     def add_player(self, player):
         self.players.append(player)
@@ -55,7 +59,9 @@ class QMIX_Controller(Agent):
         
         for _ in self.players:
             network = DQN(n_observations, n_actions).to(device)
+            target_network = copy.deepcopy(network)
             self.agent_networks.append(network)
+            self.target_agent_networks.append(target_network)
             self.params += list(network.parameters())
 
         self.mixer = QMixer(len(env.players), state_shape, n_actions)
@@ -150,13 +156,15 @@ class QMIX_Controller(Agent):
             agent_network = self.agent_networks[i]
             # agent_state_action_values += agent_network(state_batch[:,i,:])
             # fill tensor
-            agent_state_action_values.append(agent_network(state_batch[:,i,:]))
+            agent_state_action_values.append(agent_network(state_batch[:,i,:]).max(1)[0].unsqueeze(1))
 
         # transform list to tensor
         agent_state_action_values = torch.stack(agent_state_action_values, dim=0)
         # should be (batch size, number of agents, q_values (one for each action))
         agent_state_action_values = agent_state_action_values.transpose(0,1)
-        state_action_values = self.mixer(agent_state_action_values, state_batch).gather(1, action_batch)
+        state_action_values = self.mixer(agent_state_action_values, state_batch).squeeze(1)
+        # print("state_action_values: ", state_action_values)
+        print("state_action_values: ", state_action_values.shape)
 
         # Compute V(s_{t+1}) for all next states.
         # Expected values of actions for non_final_next_states are computed based
