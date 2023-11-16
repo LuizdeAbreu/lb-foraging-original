@@ -179,13 +179,17 @@ class QMIX_Controller(Agent):
         next_state_values = torch.zeros(BATCH_SIZE, 1, device=device)
         with torch.no_grad():
             next_state_values[non_final_mask] = self.target_mixer(target_agent_state_action_values, non_final_next_states).max(1)[0]
-            
+
+        # for each reward batch, sum the rewards for each agent into one value
+        sum_rewards_batch = torch.sum(reward_batch, dim=1).unsqueeze(1)
         # Compute the expected Q values
-        expected_state_action_values = (next_state_values * GAMMA) + reward_batch
+        expected_state_action_values = (next_state_values * GAMMA) + sum_rewards_batch
 
         # Compute Huber loss
         criterion = nn.SmoothL1Loss()
-        loss = criterion(mixer_state_action_values, expected_state_action_values.unsqueeze(1))
+        # print("Mixer state action values shape: ", mixer_state_action_values.shape)
+        # print("Expected state action values shape: ", expected_state_action_values.shape)
+        loss = criterion(mixer_state_action_values, expected_state_action_values)
 
         # Optimize the model
         self.optimizer.zero_grad()
