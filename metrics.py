@@ -30,6 +30,8 @@ def last_x_average(data, x):
     return averages
 
 def compare_results(results, confidence=0.95, title="Results"):
+    num_episodes = len(results)
+    title = title + " (n={0})".format(num_episodes)
     figure = plt.figure()
     figure.suptitle(title)
     ax = figure.add_subplot(111)
@@ -50,5 +52,8 @@ def compare_results(results, confidence=0.95, title="Results"):
     ax.plot(ema_final_rewards, label="Exponential moving average")
     ax.plot(lastx_final_rewards, label=f'Average of last {x} values')
     plt.legend(loc="upper left")
+
+    # save to results folder as png
+    figure.savefig("results/{0}.png".format(title))
     
     plt.show()

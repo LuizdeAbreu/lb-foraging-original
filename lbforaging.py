@@ -100,7 +100,13 @@ def main(game_count=1, render=False):
     mixer = True
     # mixer = None
     
-    agents = [RandomAgent for _ in range(len(env.players))]
+    agent_Type = "DQN"
+    # agent = "Random"
+
+    if agent_Type == "DQN":
+        agents = [DQNAgent for _ in range(len(env.players))]
+    else:
+        agents = [RandomAgent for _ in range(len(env.players))]
     if mixer is None:
         for i in range(len(env.players)):
             player = env.players[i]
@@ -128,7 +134,7 @@ def main(game_count=1, render=False):
     
     # print("episode_results", episode_results)
     # compare results
-    metrics.compare_results(episode_results, title="Foraging-10x10-3p-4f-v2")
+    metrics.compare_results(episode_results, title="Foraging-10x10-3p-4f-v2 with {0}".format("QMIX" if mixer is not None else agent_Type))
 
 
 if __name__ == "__main__":
