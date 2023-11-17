@@ -35,8 +35,6 @@ import warnings
 warnings.filterwarnings("ignore", category=UserWarning, module="gym") 
 
 def _game_loop(env, render, mixer = None, episode=0):
-    """
-    """
     nobs, ninfo = env.reset()
     steps = 0
     done = False
@@ -77,6 +75,7 @@ def _game_loop(env, render, mixer = None, episode=0):
 
 
 def main(game_count=1, render=False):
+    # Set parameters for the environment
     s=8
     p=3
     f=4
@@ -97,29 +96,39 @@ def main(game_count=1, render=False):
     )
     env = gym.make(env_id)
 
+    # Define if we are using a mixer (QMIX) or not
     mixer = True
     # mixer = None
     
-    agent_Type = "DQN"
+    # Define the type of agent
+    # Current options are DQN or Random
+    agent_type = "DQN"
     # agent = "Random"
-
-    if agent_Type == "DQN":
-        agents = [DQNAgent for _ in range(len(env.players))]
-    else:
-        agents = [RandomAgent for _ in range(len(env.players))]
+        
     if mixer is None:
+        # If we are not using a mixer, we need to define the agents
+        # there must be one agent per player
+        if agent_type == "DQN":
+            agents = [DQNAgent for _ in range(len(env.players))]
+        else:
+            agents = [RandomAgent for _ in range(len(env.players))]
         for i in range(len(env.players)):
             player = env.players[i]
             player.set_controller(agents[i](env.players[i]))
             if player.name == "DQN Agent":
                 player.init_from_env(env)
     else:
+        # If we are using a mixer, we need to create the mixer
+        # and add the players whose actions will be controlled
+        # by the inner agent networks of the mixer
         mixer = QMIX_Controller(env.players[0])
         for i in range(1, len(env.players)):
             player = env.players[i]
             player.set_controller(mixer.add_player(env.players[i]))
         mixer.init_from_env(env)
 
+    # Then we run the game for the specified number of episodes
+    # and collect the results in the episode_results dict
     episode_results = {}
     for episode in trange(game_count):
         steps, env = _game_loop(env, render, mixer, episode)
@@ -132,9 +141,9 @@ def main(game_count=1, render=False):
             "score": sum(player_scores),
         }
     
-    # print("episode_results", episode_results)
-    # compare results
-    metrics.compare_results(episode_results, title="Foraging-10x10-3p-4f-v2 with {0}".format("QMIX" if mixer is not None else agent_Type))
+    # Finally, we call the compare_results function
+    # to generate a final plot that will be saved on the /results folder
+    metrics.compare_results(episode_results, title="Foraging-10x10-3p-4f-v2 with {0}".format("QMIX" if mixer is not None else agent_type))
 
 
 if __name__ == "__main__":
