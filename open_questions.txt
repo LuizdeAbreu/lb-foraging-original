@@ -1,0 +1,5 @@
+- Should we change DQN in QMIX to DRQN (recurrent)?
+
+Seems like it's more relevant for partially observable situations, so the general case (not ours).
+
+- Hard update of target networks vs soft update?

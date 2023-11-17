@@ -1,0 +1,11 @@
+- Benchmarking Multi-Agent Deep Reinforcement Learning Algorithms in Cooperative Tasks
+
+Shows performance of various MARL techniques (including IQL and QMIX) in different environments (including LBF).
+
+https://openreview.net/pdf?id=cIrPX-Sn5n
+
+- QMIX: Monotonic Value Function Factorisation for Deep Multi-Agent Reinforcement Learning
+
+Original QMIX paper
+
+https://arxiv.org/pdf/1803.11485.pdf
