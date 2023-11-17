@@ -12,6 +12,7 @@ from lbforaging.agents.networks.dqn import DQN
 from lbforaging.foraging.environment import Action, ForagingEnv as Env
 from lbforaging.agents.helpers import ReplayMemory, Transition
 
+# Based on a simple DQN implementation from PyTorch, adapted to Agent class
 # https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html
 
 global device
@@ -40,6 +41,9 @@ class DQNAgent(Agent):
         self.steps_done = 0
 
     def init_from_env(self, env):
+        # Called after the environment is initialized
+        # in order to use the environment's observation and action spaces
+        # to initialize the neural networks
         n_observations = env.observation_space[0].shape[0]
         n_actions = env.action_space[0].n
         self.policy_net = DQN(n_observations, n_actions).to(device)
@@ -50,10 +54,13 @@ class DQNAgent(Agent):
         self.memory = ReplayMemory(10000)
 
     def get_qvalues(self, obs):
+        # Returns the Q-values for a given observation
         obs = torch.tensor(obs, dtype=torch.float32, device=device).unsqueeze(0)
         return self.policy_net(obs)
 
     def choose_action(self, obs):
+        # Use epsilon-greedy policy to choose an action
+        # with the current policy network
         sample = random.random()
         eps_threshold = EPS_END + (EPS_START - EPS_END) * \
             math.exp(-1. * self.steps_done / EPS_DECAY)
@@ -77,6 +84,8 @@ class DQNAgent(Agent):
 
     def _step(self, obs, reward, done, info, episode):
         if (self.previous_obs is None):
+            # if this is the first step, we don't have a previous observation
+            # so we just save the current observation and action and return
             self.previous_obs = torch.tensor(obs, dtype=torch.float32, device=device).unsqueeze(0)
             self.previous_action = self.choose_action(obs)
             return
@@ -90,21 +99,18 @@ class DQNAgent(Agent):
             next_obs = obs
 
         self.previous_action = int(self.previous_action)
-        # print("#####")
-        # print("Observation:", self.previous_obs)
-        # print("Action:", self.previous_action)
-        # print("Next observation:", next_obs)
-        # print("Reward:", reward)
-        # print("\n")
 
+        # Store the transition in memory
         self.memory.push(self.previous_obs, torch.tensor([[self.previous_action]], device=device, dtype=torch.long), next_obs, reward)
 
         self.previous_obs = obs
 
+        # Perform one step of the optimization (on the target network)
         self.optimize_model()
 
     def optimize_model(self):
         if len(self.memory) < BATCH_SIZE:
+            # if we don't have enough transitions in memory to sample a full batch, we can't learn yet
             return
         transitions = self.memory.sample(BATCH_SIZE)
         # Transpose the batch (see https://stackoverflow.com/a/19343/3343043 for
@@ -151,6 +157,10 @@ class DQNAgent(Agent):
         torch.nn.utils.clip_grad_value_(self.params, 100)
         self.optimizer.step()
 
+        # Update the target network, copying all weights and biases in DQN
+        # We do a soft update here, so we don't completely overwrite the target network
+        # in fact we only update it by a small amount (TAU = 0.005 or 0.5%)
+        # as opposed to the hard update which completely overwrites the target network every C steps
         target_net_state_dict = self.target_net.state_dict()
         policy_net_state_dict = self.policy_net.state_dict()
         for key in policy_net_state_dict:

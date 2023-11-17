@@ -4,6 +4,9 @@ from collections import namedtuple, deque
 Transition = namedtuple('Transition',
                         ('state', 'action', 'next_state', 'reward'))
 
+# QMIX transition
+# Must also save the global state and next global state
+# to use as input to the mixing network
 QMixTransition = namedtuple('QMixTransition',
                         ('states', 'actions', 'next_states', 'rewards', 'global_state', 'next_global_state'))
 
