@@ -35,34 +35,41 @@ import warnings
 warnings.filterwarnings("ignore", category=UserWarning, module="gym") 
 
 def _game_loop(env, render, mixer = None, episode=0):
+    # Reset env to start a new game episode
     nobs, ninfo = env.reset()
     steps = 0
     done = False
 
+    # Render the game if requested by user with flag --render
     if render:
         env.render()
         time.sleep(0.5)
 
+    # Episode loop
+    # ends if all food items are collected or if max steps are reached
     while not done:
         steps += 1
 
+        # Choose an action for each player
         actions = []
         if mixer is None:
-            # each player will return an action
+            # If there is no mixer, each player will choose its own action
             for i in range(len(env.players)):
                 player = env.players[i]
                 actions.append(player.choose_action(nobs[i]))
         else:
+            # If there is a mixer, it will return the joint action
             actions = mixer.choose_action(nobs)
 
         nobs, nreward, ndone, ninfo = env.step(actions)
 
         if mixer is None: 
-            # each player will learn from the experience
+            # If there is no mixer, each player will learn individually
             for i in range(len(env.players)):
                 player = env.players[i]
                 player.step(nobs[i], nreward[i], ndone[i], episode)
         else:
+            # If there is a mixer, it will handle the learning of all agents
             mixer.step(nobs, nreward, ndone, ninfo, episode)
 
         if render:
@@ -143,7 +150,7 @@ def main(game_count=1, render=False):
     
     # Finally, we call the compare_results function
     # to generate a final plot that will be saved on the /results folder
-    metrics.compare_results(episode_results, title="Foraging-10x10-3p-4f-v2 with {0}".format("QMIX" if mixer is not None else agent_type))
+    metrics.compare_results(episode_results, title="{0} on Foraging-10x10-3p-4f-v2".format("QMIX" if mixer is not None else agent_type))
 
 
 if __name__ == "__main__":
