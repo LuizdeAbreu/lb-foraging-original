@@ -110,7 +110,7 @@ def main(game_count=1, render=False):
     # Define the type of agent
     # Current options are DQN or Random
     agent_type = "DQN"
-    # agent = "Random"
+    # agent_type = "Random"
         
     if mixer is None:
         # If we are not using a mixer, we need to define the agents
