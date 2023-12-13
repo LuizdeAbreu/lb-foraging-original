@@ -246,7 +246,7 @@ class QMIX_Controller(Agent):
                 target_agent_state_dict[key] = TAU * agent_state_dict[key] + (1 - TAU) * target_agent_state_dict[key]
             self.target_agent_networks[i].load_state_dict(target_agent_state_dict)
 
-    def save_models(self):
+    def save(self, path):
         # Helper function to save model after a number of episodes
         torch.save(self.mixer.state_dict(), "saved/mixer.pt")
         torch.save(self.target_mixer.state_dict(), "saved/target_mixer.pt")
@@ -254,7 +254,7 @@ class QMIX_Controller(Agent):
             torch.save(self.agent_networks[i].state_dict(), "saved/agent_network_" + str(i) + ".pt")
             torch.save(self.target_agent_networks[i].state_dict(), "saved/target_agent_network_" + str(i) + ".pt")
 
-    def load_models(self):
+    def load(self, path):
         # Helper function to load model to start training from a previous point
         self.mixer.load_state_dict(torch.load("saved/mixer.pt"))
         self.target_mixer.load_state_dict(torch.load("saved/target_mixer.pt"))

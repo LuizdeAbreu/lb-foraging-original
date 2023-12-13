@@ -62,6 +62,9 @@ class Player:
 
     def init_from_env(self, env):
         return self.controller.init_from_env(env)
+    
+    def save(self, path):
+        return self.controller.save(path)
 
     @property
     def name(self):

@@ -109,8 +109,8 @@ def main(game_count=1, render=False):
     env = gym.make(env_id)
 
     # Define if we are using a mixer (QMIX) or not
-    mixer = True
-    # mixer = None
+    # mixer = True
+    mixer = None
     
     # Define the type of agent
     # Current options are DQN or Random
