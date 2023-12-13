@@ -199,18 +199,29 @@ def main(game_count=1, render=False):
     episode_results = {}
     for episode in trange(game_count, position=0, desc="Training", leave=True):
         steps, env = _game_loop(env, render, mixer, episode)
-        # create dict with results
-        player_scores = [player.score for player in env.players]
+
+        # evaluate every "evaluation_frequency" episodes
         if episode % evaluation_frequency == 0:
+            all_steps = []
+            all_player_scores = []
+            all_total_score = []
             for _ in trange(evaluation_duration, position=1, desc="Evaluating in episode {}".format(episode), leave=False):
                 steps, env = _game_loop(env, False, mixer, episode, True)
                 player_scores = [player.score for player in env.players]
                 # score should be 1 if all food is collected
-                episode_results[episode] = {
-                    "steps": steps,
-                    "player_scores": player_scores,
-                    "score": sum(player_scores),
-                }
+                # and 0 if not
+                all_steps.append(steps)
+                all_player_scores.append(player_scores)
+                all_total_score.append(sum(player_scores))
+            print("all steps", all_steps)
+            print("all player scores", all_player_scores)
+            print("all total score", all_total_score)
+
+            episode_results[episode] = {
+                "steps": np.mean(all_steps),
+                "player_scores": [np.mean([player_scores[i] for player_scores in all_player_scores]) for i in range(len(env.players))],
+                "score": np.mean(all_total_score),
+            }
             save(mixer, env, agent_type, episode_results[episode], episode)
 
     save(mixer, env, agent_type)
