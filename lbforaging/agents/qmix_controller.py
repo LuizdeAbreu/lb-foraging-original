@@ -109,11 +109,13 @@ class QMIX_Controller(Agent):
         with torch.no_grad():
             for i in range(len(self.players)):
                 agent_network = self.agent_networks[i]
+                agent_network.eval()
                 state = torch.tensor(states[i], dtype=torch.float32, device=device).unsqueeze(0)
                 agent_q_values = agent_network(state)
                 result = agent_q_values.max(1)[1].view(1, 1)
                 action = Action(result.item())
                 actions.append(action)
+                agent_network.train()
         return actions
 
 
@@ -127,6 +129,7 @@ class QMIX_Controller(Agent):
             self.previous_states = states
             self.previous_global_state = info["global"]
             self.previous_actions = self.choose_action(states, True)
+            self._set_all_to_train()
             return 
 
         rewards = torch.tensor([rewards], dtype=torch.float32, device=device)

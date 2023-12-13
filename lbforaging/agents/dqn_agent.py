@@ -75,6 +75,7 @@ class DQNAgent(Agent):
         return result
     
     def choose_optimal_action(self, obs):
+        self.policy_net.eval()
         result = None
         with torch.no_grad():
             # q_values will be a tensor of shape (1, n_actions)
@@ -86,6 +87,7 @@ class DQNAgent(Agent):
             action = Action(result.item())
             self.previous_action = action
             result = action
+        self.policy_net.train()
         return result
         
 
@@ -95,6 +97,8 @@ class DQNAgent(Agent):
             # so we just save the current observation and action and return
             self.previous_obs = torch.tensor(obs, dtype=torch.float32, device=device).unsqueeze(0)
             self.previous_action = self.choose_action(obs)
+            self.target_net.train()
+            self.policy_net.train()
             return
         
         self.steps_done += 1
