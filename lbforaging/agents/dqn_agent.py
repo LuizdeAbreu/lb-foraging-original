@@ -64,7 +64,6 @@ class DQNAgent(Agent):
         sample = random.random()
         eps_threshold = EPS_END + (EPS_START - EPS_END) * \
             math.exp(-1. * self.steps_done / EPS_DECAY)
-        self.steps_done += 1
         result = None
         if (sample > eps_threshold and self.policy_net is not None):
             # if we are evaluating, we want to use the policy network
@@ -97,6 +96,8 @@ class DQNAgent(Agent):
             self.previous_obs = torch.tensor(obs, dtype=torch.float32, device=device).unsqueeze(0)
             self.previous_action = self.choose_action(obs)
             return
+        
+        self.steps_done += 1
             
         obs = torch.tensor(obs, dtype=torch.float32, device=device).unsqueeze(0)
         reward = torch.tensor([reward], dtype=torch.float32, device=device)
