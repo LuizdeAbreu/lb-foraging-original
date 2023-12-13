@@ -30,6 +30,7 @@ def last_x_average(data, x):
     return averages
 
 def compare_results(results, confidence=0.95, title="Results"):
+    print("episode results", results)
     num_episodes = len(results)
     title = title + " (n={0})".format(num_episodes)
     figure = plt.figure()
@@ -39,18 +40,25 @@ def compare_results(results, confidence=0.95, title="Results"):
     ax.set_xlabel("Episode")
     ax.set_ylabel("Score")
     ax.grid(True)
-    ax.plot(scores, label="Score")
-    ax.plot(
-        [np.mean(scores)] * len(scores),
+    x_axis_values = list(results.keys())
+    # plot scores with x axis as episode number
+    ax.plot(x_axis_values, scores, label="Score", linewidth=2)
+    # xticks should only be the episode numbers where we evaluated the score
+    ax.set_xticks(list(results.keys()))
+    mean = np.mean(scores)
+    # plot mean
+    ax.axhline(mean, 
         label="Mean",
         linestyle="--",
         color="black",
     )
+    
+
     ema_final_rewards = exponential_moving_average(scores)
     x = len(scores) // 10
     lastx_final_rewards = last_x_average(scores, x)
-    ax.plot(ema_final_rewards, label="Exponential moving average")
-    ax.plot(lastx_final_rewards, label=f'Average of last {x} values')
+    ax.plot(x_axis_values, ema_final_rewards, label="Exponential moving average", linewidth=0.8)
+    ax.plot(x_axis_values, lastx_final_rewards, label=f'Average of last {x} values', linewidth=0.8)
     plt.legend(loc="upper left")
 
     # save to results folder as png
