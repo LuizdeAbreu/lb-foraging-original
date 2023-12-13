@@ -249,22 +249,22 @@ class QMIX_Controller(Agent):
                 target_agent_state_dict[key] = TAU * agent_state_dict[key] + (1 - TAU) * target_agent_state_dict[key]
             self.target_agent_networks[i].load_state_dict(target_agent_state_dict)
 
-    def save(self, _, __, ___):
+    def save(self, path):
         # Helper function to save model after a number of episodes
         self.last_saved_model_step = self.steps_done
 
-        torch.save(self.mixer.state_dict(), "saved/mixer.pt")
-        torch.save(self.target_mixer.state_dict(), "saved/target_mixer.pt")
+        torch.save(self.mixer.state_dict(), path + "/mixer.pt")
+        torch.save(self.target_mixer.state_dict(), path + "/target_mixer.pt")
         for i in range(len(self.players)):
-            torch.save(self.agent_networks[i].state_dict(), "saved/agent_network_" + str(i) + ".pt")
-            torch.save(self.target_agent_networks[i].state_dict(), "saved/target_agent_network_" + str(i) + ".pt")
+            torch.save(self.agent_networks[i].state_dict(), path + "/agent_network_" + str(i) + ".pt")
+            torch.save(self.target_agent_networks[i].state_dict(), path + "/target_agent_network_" + str(i) + ".pt")
 
         torch.save({
             'optimizer_state_dict': self.optimizer.state_dict(),
             'memory': self.memory,
             'steps_done': self.steps_done,
             'last_saved_model_step': self.last_saved_model_step,
-        }, "saved/other.pt")
+        }, path + "/other.pt")
 
     def load(self, _):
         # Helper function to load model to start training from a previous point

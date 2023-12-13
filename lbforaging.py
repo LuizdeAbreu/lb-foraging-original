@@ -54,7 +54,7 @@ def save(mixer, env, agent_type, results=None, episode="Final"):
                 print(e)
                 pass
     else:
-        mixer.save("results/{0}_mixer.pt".format(agent_type))
+        mixer.save("results/episode_{0}".format(episode))
 
     if results is not None:
         # save results
@@ -157,8 +157,8 @@ def main(game_count=1, render=False):
                 pass
 
     # Define if we are using a mixer (QMIX) or not
-    # mixer = True
-    mixer = None
+    mixer = True
+    # mixer = None
     
     # Define the type of agent
     # Current options are DQN or Random
