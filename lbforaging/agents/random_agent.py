@@ -12,3 +12,6 @@ class RandomAgent(Agent):
 
     def choose_action(self, obs):
         return random.choice(ForagingEnv.action_set)
+    
+    def choose_optimal_action(self, obs):
+        return self.choose_action(obs)

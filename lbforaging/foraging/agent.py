@@ -37,6 +37,9 @@ class Agent:
 
     def choose_action(self, obs):
         raise NotImplemented("You must implement an agent")
+    
+    def choose_optimal_action(self, obs):
+        return NotImplemented("You must implement an agent")
 
     def init_from_env(self, env, mixer = None):
         raise NotImplemented("Agent does not have init from end implemented method or does not need it")

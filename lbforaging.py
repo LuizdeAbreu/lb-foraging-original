@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning, module="gym") 
 
-def _game_loop(env, render, mixer = None, episode=0):
+def _game_loop(env, render, mixer = None, episode=0, eval=False):
     # Reset env to start a new game episode
     nobs, ninfo = env.reset()
     steps = 0
@@ -56,12 +56,19 @@ def _game_loop(env, render, mixer = None, episode=0):
             # If there is no mixer, each player will choose its own action
             for i in range(len(env.players)):
                 player = env.players[i]
-                actions.append(player.choose_action(nobs[i]))
+                action = player.choose_action(nobs[i]) if not eval else player.choose_optimal_action(nobs[i])
+                actions.append(action)
         else:
             # If there is a mixer, it will return the joint action
-            actions = mixer.choose_action(nobs)
+            actions = mixer.choose_action(nobs) if not eval else mixer.choose_optimal_action(nobs)
 
         nobs, nreward, ndone, ninfo = env.step(actions)
+
+        done = np.all(ndone)
+
+        if eval:
+            # If we are evaluating, we don't want to learn
+            continue
 
         if mixer is None: 
             # If there is no mixer, each player will learn individually
@@ -75,8 +82,6 @@ def _game_loop(env, render, mixer = None, episode=0):
         if render:
             env.render()
             time.sleep(0.5)
-
-        done = np.all(ndone)
 
     return steps, env
 
@@ -134,19 +139,30 @@ def main(game_count=1, render=False):
             player.set_controller(mixer.add_player(env.players[i]))
         mixer.init_from_env(env)
 
+    
+    evaluation_duration = 25
+    evaluation_frequency = min(5000, game_count // 200)
+    if game_count < 1000:
+        evaluation_frequency = game_count // 5
+        evaluation_duration = 2
+
     # Then we run the game for the specified number of episodes
     # and collect the results in the episode_results dict
     episode_results = {}
-    for episode in trange(game_count):
+    for episode in trange(game_count, position=0, desc="Training", leave=True):
         steps, env = _game_loop(env, render, mixer, episode)
         # create dict with results
         player_scores = [player.score for player in env.players]
-        # score should be 1 if all food is collected
-        episode_results[episode] = {
-            "steps": steps,
-            "player_scores": player_scores,
-            "score": sum(player_scores),
-        }
+        if episode % evaluation_frequency == 0:
+            for _ in trange(evaluation_duration, position=1, desc="Evaluating in episode {}".format(episode), leave=False):
+                steps, env = _game_loop(env, False, mixer, episode, True)
+                player_scores = [player.score for player in env.players]
+                # score should be 1 if all food is collected
+                episode_results[episode] = {
+                    "steps": steps,
+                    "player_scores": player_scores,
+                    "score": sum(player_scores),
+                }
     
     # Finally, we call the compare_results function
     # to generate a final plot that will be saved on the /results folder

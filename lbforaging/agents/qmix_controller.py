@@ -96,19 +96,26 @@ class QMIX_Controller(Agent):
             math.exp(-1. * self.steps_done / EPS_DECAY)
         self.steps_done += 1
 
+        result = None
         if sample > eps_threshold and first == False:
-            with torch.no_grad():
-                actions = []
-                for i in range(len(self.players)):
-                    agent_network = self.agent_networks[i]
-                    state = torch.tensor(states[i], dtype=torch.float32, device=device).unsqueeze(0)
-                    agent_q_values = agent_network(state)
-                    result = agent_q_values.max(1)[1].view(1, 1)
-                    action = Action(result.item())
-                    actions.append(action)
-                return actions
+            result = self.choose_optimal_action(states)
         else:
-            return [random.choice(Env.action_set) for _ in range(len(self.players))]
+            result = [random.choice(Env.action_set) for _ in range(len(self.players))]
+        self.previous_actions = result
+        return result
+        
+    def choose_optimal_action(self, states):
+        actions = []
+        with torch.no_grad():
+            for i in range(len(self.players)):
+                agent_network = self.agent_networks[i]
+                state = torch.tensor(states[i], dtype=torch.float32, device=device).unsqueeze(0)
+                agent_q_values = agent_network(state)
+                result = agent_q_values.max(1)[1].view(1, 1)
+                action = Action(result.item())
+                actions.append(action)
+        return actions
+
 
     def _step(self, states, rewards, done, info, episode):
         # Same as DQNAgent, but we're now receiving multiple instances

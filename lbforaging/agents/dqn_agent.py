@@ -66,21 +66,29 @@ class DQNAgent(Agent):
             math.exp(-1. * self.steps_done / EPS_DECAY)
         self.steps_done += 1
         result = None
-        if sample > eps_threshold and self.policy_net is not None:
-            with torch.no_grad():
-                # q_values will be a tensor of shape (1, n_actions)
-                q_values = self.get_qvalues(obs)
-                # t.max(1) will return the largest column value of each row.
-                # second column on max result is index of where max element was
-                # found, so we pick action with the larger expected reward.
-                result = q_values.max(1)[1].view(1, 1)
-                action = Action(result.item())
-                self.previous_action = action
-                result = action
+        if (sample > eps_threshold and self.policy_net is not None):
+            # if we are evaluating, we want to use the policy network
+            # and not choose the random action
+            result = self.choose_optimal_action(obs)
         else:
             result = random.choice(Env.action_set)
         self.previous_action = result
         return result
+    
+    def choose_optimal_action(self, obs):
+        result = None
+        with torch.no_grad():
+            # q_values will be a tensor of shape (1, n_actions)
+            q_values = self.get_qvalues(obs)
+            # t.max(1) will return the largest column value of each row.
+            # second column on max result is index of where max element was
+            # found, so we pick action with the larger expected reward.
+            result = q_values.max(1)[1].view(1, 1)
+            action = Action(result.item())
+            self.previous_action = action
+            result = action
+        return result
+        
 
     def _step(self, obs, reward, done, info, episode):
         if (self.previous_obs is None):
