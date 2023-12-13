@@ -2,6 +2,9 @@
 import argparse
 import logging
 import time
+import os
+import shutil
+
 import gym
 import numpy as np
 from gym.envs.registration import register
@@ -33,6 +36,29 @@ logger = logging.getLogger(__name__)
 
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning, module="gym") 
+
+def save(mixer, env, agent_type, results=None, episode="Final"): 
+    # save agents
+    # create folder for episode if it does not exist
+    if not os.path.exists("results"):
+        os.makedirs("results")
+    if not os.path.exists("results/episode_{0}".format(episode)):
+        os.makedirs("results/episode_{0}".format(episode))
+    if mixer is None:
+        for i in range(len(env.players)):
+            player = env.players[i]
+            try:
+                player.save("results/episode_{0}".format(episode), i)
+            except Exception as e:
+                print("Could not save agent:")
+                print(e)
+                pass
+    else:
+        mixer.save("results/{0}_mixer.pt".format(agent_type))
+
+    if results is not None:
+        # save results
+        metrics.save_results(results, episode=episode)
 
 def _game_loop(env, render, mixer = None, episode=0, eval=False):
     # Reset env to start a new game episode
@@ -108,9 +134,31 @@ def main(game_count=1, render=False):
     )
     env = gym.make(env_id)
 
+    # erase results folder
+    if os.path.exists("results"):
+        for filename in os.listdir("results"):
+            file_path = os.path.join("results", filename)
+            try:
+                if os.path.isfile(file_path) or os.path.islink(file_path):
+                    os.unlink(file_path)
+            except Exception as e:
+                print("Could not delete file:")
+                print(e)
+                pass
+        # erase folders as well
+        for folder in os.listdir("results"):
+            folder_path = os.path.join("results", folder)
+            try:
+                if os.path.isdir(folder_path):
+                    shutil.rmtree(folder_path)
+            except Exception as e:
+                print("Could not delete folder:")
+                print(e)
+                pass
+
     # Define if we are using a mixer (QMIX) or not
-    mixer = True
-    # mixer = None
+    # mixer = True
+    mixer = None
     
     # Define the type of agent
     # Current options are DQN or Random
@@ -141,7 +189,7 @@ def main(game_count=1, render=False):
 
     
     evaluation_duration = 25
-    evaluation_frequency = min(5000, game_count // 200)
+    evaluation_frequency = game_count // 100
     if game_count < 1000:
         evaluation_frequency = game_count // 5
         evaluation_duration = 2
@@ -163,19 +211,9 @@ def main(game_count=1, render=False):
                     "player_scores": player_scores,
                     "score": sum(player_scores),
                 }
+            save(mixer, env, agent_type, episode_results[episode], episode)
 
-    # save agents
-    if mixer is None:
-        for i in range(len(env.players)):
-            player = env.players[i]
-            try:
-                player.save("{0}_player_{1}.pt".format(agent_type, i))
-            except Exception as e:
-                print("Could not save agent:")
-                print(e)
-                pass
-    else:
-        mixer.save("results/{0}_mixer.pt".format(agent_type))
+    save(mixer, env, agent_type)
     
     # Finally, we call the compare_results function
     # to generate a final plot that will be saved on the /results folder

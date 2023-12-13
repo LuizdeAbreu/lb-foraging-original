@@ -47,7 +47,7 @@ class Agent:
     def add_player(self, player):
         raise NotImplemented("Agent does not have add player implemented method or does not need it")
     
-    def save(self, path):
+    def save(self, path, *args, **kwargs):
         raise NotImplemented("Agent does not have save implemented method or does not need it")
     
     def load(self, path):

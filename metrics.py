@@ -2,6 +2,7 @@ import math
 import numpy as np
 import matplotlib.pyplot as plt
 import json
+import os
 
 def z_table(confidence):
     return {
@@ -67,7 +68,15 @@ def compare_results(results, confidence=0.95, title="Results"):
     
     plt.show()
 
-def save_results(result):
+def save_results(result, episode = None):
+    # create eval results folder if it doesn't exist
+    if not os.path.exists("results"):
+        os.makedirs("results")
+    if not os.path.exists("results/evaluation"):
+        os.makedirs("results/evaluation")
+
+    path = "results/evaluation/"
+    filename = "evaluation_results.json" if episode is None else "evaluation_results_{0}.json".format(episode)
     # save to results folder as json
-    with open("results/evaluation_results.json", "w") as f:
+    with open(path + filename, "w") as f:
         json.dump(result, f)

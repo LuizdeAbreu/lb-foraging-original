@@ -63,8 +63,8 @@ class Player:
     def init_from_env(self, env):
         return self.controller.init_from_env(env)
     
-    def save(self, path):
-        return self.controller.save(path)
+    def save(self, path, *args, **kwargs):
+        return self.controller.save(path, *args, **kwargs)
     
     def load(self, path):
         return self.controller.load(path)

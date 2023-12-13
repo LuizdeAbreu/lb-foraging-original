@@ -249,7 +249,7 @@ class QMIX_Controller(Agent):
                 target_agent_state_dict[key] = TAU * agent_state_dict[key] + (1 - TAU) * target_agent_state_dict[key]
             self.target_agent_networks[i].load_state_dict(target_agent_state_dict)
 
-    def save(self, _):
+    def save(self, _, __, ___):
         # Helper function to save model after a number of episodes
         self.last_saved_model_step = self.steps_done
 
