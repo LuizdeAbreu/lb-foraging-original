@@ -109,8 +109,8 @@ def main(game_count=1, render=False):
     env = gym.make(env_id)
 
     # Define if we are using a mixer (QMIX) or not
-    # mixer = True
-    mixer = None
+    mixer = True
+    # mixer = None
     
     # Define the type of agent
     # Current options are DQN or Random
@@ -169,9 +169,10 @@ def main(game_count=1, render=False):
         for i in range(len(env.players)):
             player = env.players[i]
             try:
-                print("saving agent")
-                player.save("results/{0}_player_{1}.pt".format(agent_type, i))
-            except:
+                player.save("{0}_player_{1}.pt".format(agent_type, i))
+            except Exception as e:
+                print("Could not save agent:")
+                print(e)
                 pass
     else:
         mixer.save("results/{0}_mixer.pt".format(agent_type))
