@@ -176,6 +176,23 @@ class DQNAgent(Agent):
         self.target_net.load_state_dict(target_net_state_dict)     
 
     def save(self, path):
-        torch.save(self.policy_net.state_dict(), "saved/{}.pt".format(path))
+        print("Saving DQN agent to saved/policy_{}.pt and saved/target_{}.pt".format(path, path))
+        torch.save(self.policy_net.state_dict(), "saved/policy_{}.pt".format(path))
         torch.save(self.target_net.state_dict(), "saved/target_{}.pt".format(path))
+
+        torch.save({
+            'optimizer_state_dict': self.optimizer.state_dict(),
+            'steps_done': self.steps_done,
+            'memory': self.memory,
+        }, "saved/optimizer_{}.pt".format(path))
+
+    def load(self, path):
+        print("Loading DQN agent from saved/policy_{}.pt and saved/target_{}.pt".format(path, path))
+        self.policy_net.load_state_dict(torch.load("saved/policy_{}.pt".format(path)))
+        self.target_net.load_state_dict(torch.load("saved/target_{}.pt".format(path)))
+
+        checkpoint = torch.load("saved/optimizer_{}.pt".format(path))
+        self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        self.steps_done = checkpoint['steps_done']
+        self.memory = checkpoint['memory']
     

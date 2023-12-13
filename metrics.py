@@ -31,7 +31,7 @@ def last_x_average(data, x):
     return averages
 
 def compare_results(results, confidence=0.95, title="Results"):
-    print("episode results", results)
+    # print("episode results", results)
     num_episodes = len(results)
     title = title + " (n={0})".format(num_episodes)
     figure = plt.figure()

@@ -163,11 +163,23 @@ def main(game_count=1, render=False):
                     "player_scores": player_scores,
                     "score": sum(player_scores),
                 }
+
+    # save agents
+    if mixer is None:
+        for i in range(len(env.players)):
+            player = env.players[i]
+            try:
+                print("saving agent")
+                player.save("results/{0}_player_{1}.pt".format(agent_type, i))
+            except:
+                pass
+    else:
+        mixer.save("results/{0}_mixer.pt".format(agent_type))
     
     # Finally, we call the compare_results function
     # to generate a final plot that will be saved on the /results folder
-    metrics.compare_results(episode_results, title="{0} on Foraging-10x10-3p-4f-v2".format("QMIX" if mixer is not None else agent_type))
     metrics.save_results(episode_results)
+    metrics.compare_results(episode_results, title="{0} on Foraging-10x10-3p-4f-v2".format("QMIX" if mixer is not None else agent_type))
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Play the level foraging game.")

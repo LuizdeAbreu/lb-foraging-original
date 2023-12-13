@@ -49,6 +49,9 @@ class Agent:
     
     def save(self, path):
         raise NotImplemented("Agent does not have save implemented method or does not need it")
+    
+    def load(self, path):
+        raise NotImplemented("Agent does not have load implemented method or does not need it")
 
     def _closest_food(self, obs, max_food_level=None, start=None):
 

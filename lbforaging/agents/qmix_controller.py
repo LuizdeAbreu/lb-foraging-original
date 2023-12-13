@@ -246,22 +246,59 @@ class QMIX_Controller(Agent):
                 target_agent_state_dict[key] = TAU * agent_state_dict[key] + (1 - TAU) * target_agent_state_dict[key]
             self.target_agent_networks[i].load_state_dict(target_agent_state_dict)
 
-    def save(self, path):
+    def save(self, _):
         # Helper function to save model after a number of episodes
+        self.last_saved_model_step = self.steps_done
+
         torch.save(self.mixer.state_dict(), "saved/mixer.pt")
         torch.save(self.target_mixer.state_dict(), "saved/target_mixer.pt")
         for i in range(len(self.players)):
             torch.save(self.agent_networks[i].state_dict(), "saved/agent_network_" + str(i) + ".pt")
             torch.save(self.target_agent_networks[i].state_dict(), "saved/target_agent_network_" + str(i) + ".pt")
 
-    def load(self, path):
+        torch.save({
+            'optimizer_state_dict': self.optimizer.state_dict(),
+            'memory': self.memory,
+            'steps_done': self.steps_done,
+            'last_saved_model_step': self.last_saved_model_step,
+        }, "saved/other.pt")
+
+    def load(self, _):
         # Helper function to load model to start training from a previous point
         self.mixer.load_state_dict(torch.load("saved/mixer.pt"))
         self.target_mixer.load_state_dict(torch.load("saved/target_mixer.pt"))
+        
+        self.mixer.train()
+        self.target_mixer.train()
+
         for i in range(len(self.players)):
             self.agent_networks[i].load_state_dict(torch.load("saved/agent_network_" + str(i) + ".pt"))
             self.target_agent_networks[i].load_state_dict(torch.load("saved/target_agent_network_" + str(i) + ".pt"))
+
+            self.agent_networks[i].train()
+            self.target_agent_networks[i].train()
+
+        checkpoint = torch.load("saved/other.pt")
+        self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        self.memory = checkpoint['memory']
+        self.steps_done = checkpoint['steps_done']
+        self.last_saved_model_step = checkpoint['last_saved_model_step']
         
+    def _set_all_to_eval(self):
+        self.mixer.eval()
+        self.target_mixer.eval()
+        
+        for i in range(len(self.players)):
+            self.agent_networks[i].eval()
+            self.target_agent_networks[i].eval()
+
+    def _set_all_to_train(self):
+        self.mixer.train()
+        self.target_mixer.train()
+        
+        for i in range(len(self.players)):
+            self.agent_networks[i].train()
+            self.target_agent_networks[i].train()
 
     
 

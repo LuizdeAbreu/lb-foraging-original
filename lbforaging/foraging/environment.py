@@ -65,6 +65,9 @@ class Player:
     
     def save(self, path):
         return self.controller.save(path)
+    
+    def load(self, path):
+        return self.controller.load(path)
 
     @property
     def name(self):
