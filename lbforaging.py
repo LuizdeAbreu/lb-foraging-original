@@ -213,9 +213,6 @@ def main(game_count=1, render=False):
                 all_steps.append(steps)
                 all_player_scores.append(player_scores)
                 all_total_score.append(sum(player_scores))
-            print("all steps", all_steps)
-            print("all player scores", all_player_scores)
-            print("all total score", all_total_score)
 
             episode_results[episode] = {
                 "steps": np.mean(all_steps),
