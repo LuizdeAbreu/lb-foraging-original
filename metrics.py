@@ -1,6 +1,7 @@
 import math
 import numpy as np
 import matplotlib.pyplot as plt
+import json
 
 def z_table(confidence):
     return {
@@ -65,3 +66,8 @@ def compare_results(results, confidence=0.95, title="Results"):
     figure.savefig("results/{0}.png".format(title))
     
     plt.show()
+
+def save_results(result):
+    # save to results folder as json
+    with open("results/evaluation_results.json", "w") as f:
+        json.dump(result, f)
