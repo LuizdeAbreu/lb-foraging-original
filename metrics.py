@@ -31,7 +31,7 @@ def last_x_average(data, x):
         averages[i] = np.mean(last_x)  # Calculate the mean and store it in the averages array
     return averages
 
-def compare_results(results, confidence=0.95, title="Results"):
+def compare_results(results, confidence=0.95, title="Results", with_additional_curves=False, path=None):
     # print("episode results", results)
     num_episodes = len(results)
     title = title + " (n={0})".format(num_episodes)
@@ -55,18 +55,19 @@ def compare_results(results, confidence=0.95, title="Results"):
         color="black",
     )
     
-
-    ema_final_rewards = exponential_moving_average(scores)
-    x = len(scores) // 10
-    lastx_final_rewards = last_x_average(scores, x)
-    ax.plot(x_axis_values, ema_final_rewards, label="Exponential moving average", linewidth=0.8)
-    ax.plot(x_axis_values, lastx_final_rewards, label=f'Average of last {x} values', linewidth=0.8)
-    plt.legend(loc="upper left")
+    if (with_additional_curves):
+        ema_final_rewards = exponential_moving_average(scores)
+        x = len(scores) // 10
+        lastx_final_rewards = last_x_average(scores, x)
+        ax.plot(x_axis_values, ema_final_rewards, label="Exponential moving average", linewidth=0.8)
+        ax.plot(x_axis_values, lastx_final_rewards, label=f'Average of last {x} values', linewidth=0.8)
+        plt.legend(loc="upper left")
 
     # save to results folder as png
-    figure.savefig("results/{0}.png".format(title))
+    figure.savefig("results/{0}.png".format(title) if path is None else path)
     
-    plt.show()
+    if path is None:
+        plt.show()
 
 def save_results(result, episode = None):
     # create eval results folder if it doesn't exist

@@ -58,7 +58,12 @@ def save(mixer, env, agent_type, results=None, episode="Final"):
 
     if results is not None:
         # save results
-        metrics.save_results(results, episode=episode)
+        metrics.save_results(results[episode], episode=episode)
+        if episode % 10000 == 0:
+            # save plot every 10000 episodes
+            metrics.compare_results(results, title="Partial plot",
+                path="results/episode_{0}/partial_plot.png".format(episode))
+        
 
 def _game_loop(env, render, mixer = None, episode=0, eval=False):
     # Reset env to start a new game episode
@@ -219,14 +224,15 @@ def main(game_count=1, render=False):
                 "player_scores": [np.mean([player_scores[i] for player_scores in all_player_scores]) for i in range(len(env.players))],
                 "score": np.mean(all_total_score),
             }
-            save(mixer, env, agent_type, episode_results[episode], episode)
+            save(mixer, env, agent_type, episode_results, episode)
 
     save(mixer, env, agent_type)
     
     # Finally, we call the compare_results function
     # to generate a final plot that will be saved on the /results folder
     metrics.save_results(episode_results)
-    metrics.compare_results(episode_results, title="{0} on Foraging-10x10-3p-4f-v2".format("QMIX" if mixer is not None else agent_type))
+    metrics.compare_results(episode_results, title="{0} on Foraging-10x10-3p-4f-v2".format("QMIX" if mixer is not None else agent_type),
+                            with_additional_curves=True)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Play the level foraging game.")
