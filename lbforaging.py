@@ -176,7 +176,7 @@ def main(game_count=1, render=False):
             player = env.players[i]
             player.set_controller(agents[i](env.players[i]))
             if player.name == "DQN Agent":
-                player.init_from_env(env)
+                player.init_from_env(env, game_count)
     else:
         # If we are using a mixer, we need to create the mixer
         # and add the players whose actions will be controlled
@@ -185,7 +185,7 @@ def main(game_count=1, render=False):
         for i in range(1, len(env.players)):
             player = env.players[i]
             player.set_controller(mixer.add_player(env.players[i]))
-        mixer.init_from_env(env)
+        mixer.init_from_env(env, game_count)
 
     
     evaluation_duration = 25

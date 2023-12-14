@@ -60,8 +60,8 @@ class Player:
     def choose_optimal_action(self, obs):
         return self.controller.choose_optimal_action(obs)
 
-    def init_from_env(self, env):
-        return self.controller.init_from_env(env)
+    def init_from_env(self, env, game_count):
+        return self.controller.init_from_env(env, game_count)
     
     def save(self, path, *args, **kwargs):
         return self.controller.save(path, *args, **kwargs)

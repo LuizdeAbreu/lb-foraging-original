@@ -23,7 +23,9 @@ EPS_END = 0.05
 EPS_DECAY = 1000
 TAU = 0.005
 LR = 1e-4
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# torch.set_default_device(device)
+device = torch.device("cpu")
 
 class QMIX_Controller(Agent):
     name = "QMIX Controller"
@@ -38,6 +40,7 @@ class QMIX_Controller(Agent):
         self.previous_global_state = None
 
         self.steps_done = 0
+        self.episodes_done = 0
         self.players = [player]
 
         self.mixer = None
@@ -51,7 +54,7 @@ class QMIX_Controller(Agent):
         # handle multiple players
         self.players.append(player)
 
-    def init_from_env(self, env):
+    def init_from_env(self, env, game_count):
         if (len(env.players) != len(self.players)):
             raise ValueError("The number of players in the environment does not match the number of players in the controller.")
         # Analogous to DQNAgent.init_from_env
@@ -87,13 +90,14 @@ class QMIX_Controller(Agent):
         self.last_target_update_step = 0
         self.last_saved_model_step = 0
 
+        self.epsilon_decay = (EPS_START - EPS_END)/game_count
+
     def choose_action(self, states, first=False):
         # Same as DQNAgent, 
         # but note that in this case we return a list of actions
         # (the joint action) by using each agent network
         sample = random.random()
-        eps_threshold = EPS_END + (EPS_START - EPS_END) * \
-            math.exp(-1. * self.steps_done / EPS_DECAY)
+        eps_threshold = EPS_START - self.epsilon_decay * self.episodes_done
         self.steps_done += 1
 
         result = None
@@ -140,6 +144,7 @@ class QMIX_Controller(Agent):
         if (all_done):
             states = None
             global_state = None  
+            self.episodes_done += 1
 
         self.previous_actions = [int(x) for x in self.previous_actions]
         self.previous_actions = torch.tensor(self.previous_actions, dtype=torch.float32, device=device)

@@ -41,7 +41,7 @@ class Agent:
     def choose_optimal_action(self, obs):
         return NotImplemented("You must implement an agent")
 
-    def init_from_env(self, env, mixer = None):
+    def init_from_env(self, env, game_count):
         raise NotImplemented("Agent does not have init from end implemented method or does not need it")
 
     def add_player(self, player):

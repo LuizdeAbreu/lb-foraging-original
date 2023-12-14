@@ -24,7 +24,9 @@ EPS_END = 0.05
 EPS_DECAY = 1000
 TAU = 0.005
 LR = 1e-4
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# torch.set_default_device(device)
+device = torch.device("cpu")
 
 class DQNAgent(Agent):
     name = "DQN Agent"
@@ -39,8 +41,9 @@ class DQNAgent(Agent):
         self.previous_obs = None
         self.previous_action = None
         self.steps_done = 0
+        self.episodes_done = 0
 
-    def init_from_env(self, env):
+    def init_from_env(self, env, game_count):
         # Called after the environment is initialized
         # in order to use the environment's observation and action spaces
         # to initialize the neural networks
@@ -53,6 +56,8 @@ class DQNAgent(Agent):
         self.optimizer = optim.AdamW(self.params, lr=LR, amsgrad=True)
         self.memory = ReplayMemory(10000)
 
+        self.epsilon_decay = (EPS_START - EPS_END)/game_count
+
     def get_qvalues(self, obs):
         # Returns the Q-values for a given observation
         obs = torch.tensor(obs, dtype=torch.float32, device=device).unsqueeze(0)
@@ -62,8 +67,9 @@ class DQNAgent(Agent):
         # Use epsilon-greedy policy to choose an action
         # with the current policy network
         sample = random.random()
-        eps_threshold = EPS_END + (EPS_START - EPS_END) * \
-            math.exp(-1. * self.steps_done / EPS_DECAY)
+        eps_threshold = EPS_START - self.epsilon_decay * self.episodes_done
+        
+        # print("eps_threshold: {}".format(eps_threshold))
         result = None
         if (sample > eps_threshold and self.policy_net is not None):
             # if we are evaluating, we want to use the policy network
@@ -108,6 +114,7 @@ class DQNAgent(Agent):
 
         if done:
             next_obs = None
+            self.episodes_done += 1
         else:
             next_obs = obs
 
