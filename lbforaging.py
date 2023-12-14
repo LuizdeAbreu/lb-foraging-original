@@ -162,8 +162,8 @@ def main(game_count=1, render=False):
                 pass
 
     # Define if we are using a mixer (QMIX) or not
-    mixer = True
-    # mixer = None
+    # mixer = True
+    mixer = None
     
     # Define the type of agent
     # Current options are DQN or Random
@@ -223,6 +223,8 @@ def main(game_count=1, render=False):
                 "steps": np.mean(all_steps),
                 "player_scores": [np.mean([player_scores[i] for player_scores in all_player_scores]) for i in range(len(env.players))],
                 "score": np.mean(all_total_score),
+                "min": np.min(all_total_score),
+                "max": np.max(all_total_score),
             }
             save(mixer, env, agent_type, episode_results, episode)
 
