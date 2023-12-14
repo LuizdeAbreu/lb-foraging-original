@@ -33,6 +33,8 @@ def last_x_average(data, x):
 
 def compare_results(results, confidence=0.95, title="Results", with_additional_curves=False, path=None):
     # print("episode results", results)
+    # clear plot first
+    plt.clf()
     num_episodes = len(results)
     title = title + " (n={0})".format(num_episodes)
     figure = plt.figure()
@@ -66,8 +68,8 @@ def compare_results(results, confidence=0.95, title="Results", with_additional_c
     # save to results folder as png
     figure.savefig("results/{0}.png".format(title) if path is None else path)
     
-    if path is None:
-        plt.show()
+    # if path is None:
+    #     plt.show()
 
 def save_results(result, episode = None):
     # create eval results folder if it doesn't exist

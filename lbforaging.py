@@ -62,7 +62,7 @@ def save(mixer, env, agent_type, results=None, episode="Final"):
         if episode % 10000 == 0:
             # save plot every 10000 episodes
             metrics.compare_results(results, title="Partial plot",
-                path="results/episode_{0}/partial_plot.png".format(episode))
+                path="results/partial_plot.png".format(episode))
         
 
 def _game_loop(env, render, mixer = None, episode=0, eval=False):
@@ -223,8 +223,8 @@ def main(game_count=1, render=False):
                 "steps": np.mean(all_steps),
                 "player_scores": [np.mean([player_scores[i] for player_scores in all_player_scores]) for i in range(len(env.players))],
                 "score": np.mean(all_total_score),
-                "min": np.min(all_total_score),
-                "max": np.max(all_total_score),
+                "min": np.min(all_total_score).astype('float64'),
+                "max": np.max(all_total_score).astype('float64'),
             }
             save(mixer, env, agent_type, episode_results, episode)
 
